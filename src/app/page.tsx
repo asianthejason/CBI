@@ -189,6 +189,7 @@ function MatchupCard({
   );
 }
 
+
 function Scorecard({
   title,
   left,
@@ -205,88 +206,116 @@ function Scorecard({
   const frontNine = Array.from({ length: 9 }, (_, i) => i + 1);
   const backNine = Array.from({ length: 9 }, (_, i) => i + 10);
 
-  const leftName = `${getPlayerName(playerNames, left[0])} / ${getPlayerName(playerNames, left[1])}`;
-  const rightName = `${getPlayerName(playerNames, right[0])} / ${getPlayerName(playerNames, right[1])}`;
+  const leftName = `${getPlayerName(playerNames, left[0])}
+${getPlayerName(playerNames, left[1])}`;
+  const rightName = `${getPlayerName(playerNames, right[0])}
+${getPlayerName(playerNames, right[1])}`;
   const leftTotals = calculateScoreTotals(score.left);
   const rightTotals = calculateScoreTotals(score.right);
 
-  const Cell = ({ value, muted = false }: { value: ReactNode; muted?: boolean }) => (
-    <div className={"flex h-11 min-w-[40px] items-center justify-center border-l border-white/10 px-1 text-center text-sm font-semibold " + (muted ? "text-white/60" : "text-white/88")}>
-      {value}
-    </div>
-  );
+  const renderPairRows = (
+    pairKey: string,
+    name: string,
+    holes: Array<number | null>,
+    totals: { out: number | null; in: number | null; total: number | null },
+    topGroup = false,
+  ) => (
+    <>
+      <tr className={topGroup ? "" : "border-t border-white/10"}>
+        <td
+          rowSpan={2}
+          className="w-[260px] min-w-[260px] border-r border-white/10 px-6 py-7 align-middle"
+        >
+          <div className="whitespace-pre-line text-[24px] font-semibold leading-[1.45] text-white/88">
+            {name}
+          </div>
+        </td>
 
-  const ScoreRow = ({
-    name,
-    holes,
-    totals,
-    topBorder = false,
-  }: {
-    name: string;
-    holes: Array<number | null>;
-    totals: { out: number | null; in: number | null; total: number | null };
-    topBorder?: boolean;
-  }) => (
-    <div
-      className={
-        "grid min-w-[980px] grid-cols-[200px_repeat(9,minmax(40px,1fr))_56px_repeat(9,minmax(40px,1fr))_56px_56px] bg-transparent " +
-        (topBorder ? "border-t border-white/10" : "")
-      }
-    >
-      <div className="flex h-11 items-center px-3 text-sm font-semibold text-white/88">{name}</div>
-      {holes.slice(0, 9).map((value, index) => (
-        <Cell key={`front-${name}-${index}`} value={value ?? "—"} />
-      ))}
-      <Cell value={totals.out ?? "—"} muted />
-      {holes.slice(9, 18).map((value, index) => (
-        <Cell key={`back-${name}-${index}`} value={value ?? "—"} />
-      ))}
-      <Cell value={totals.in ?? "—"} muted />
-      <Cell value={totals.total ?? "—"} muted />
-    </div>
+        {frontNine.map((holeNumber, index) => (
+          <td
+            key={`${pairKey}-front-${holeNumber}`}
+            className="h-[62px] min-w-[76px] border-r border-white/10 bg-white/[0.05] text-center align-middle"
+          >
+            <div className="text-[18px] font-semibold text-white/70">{holeNumber}</div>
+            <div className="mt-2 text-[28px] font-semibold leading-none text-white/45">
+              {holes[index] ?? "—"}
+            </div>
+          </td>
+        ))}
+
+        <td className="h-[62px] min-w-[92px] border-r border-white/10 bg-white/[0.05] text-center align-middle">
+          <div className="text-[18px] font-semibold uppercase tracking-wide text-white/70">OUT</div>
+          <div className="mt-2 text-[28px] font-semibold leading-none text-white/45">
+            {totals.out ?? "—"}
+          </div>
+        </td>
+
+        <td
+          rowSpan={2}
+          className="min-w-[120px] bg-black/35 px-5 py-6 text-center align-middle"
+        >
+          <div className="text-[18px] font-semibold uppercase tracking-[0.18em] text-white/60">
+            TOT
+          </div>
+          <div className="mt-5 text-[36px] font-semibold leading-none text-white/88">
+            {totals.total ?? "—"}
+          </div>
+        </td>
+      </tr>
+
+      <tr>
+        {backNine.map((holeNumber, index) => (
+          <td
+            key={`${pairKey}-back-${holeNumber}`}
+            className="h-[62px] min-w-[76px] border-r border-t border-white/10 bg-white/[0.05] text-center align-middle"
+          >
+            <div className="text-[18px] font-semibold text-white/70">{holeNumber}</div>
+            <div className="mt-2 text-[28px] font-semibold leading-none text-white/45">
+              {holes[index + 9] ?? "—"}
+            </div>
+          </td>
+        ))}
+
+        <td className="h-[62px] min-w-[92px] border-r border-t border-white/10 bg-white/[0.05] text-center align-middle">
+          <div className="text-[18px] font-semibold uppercase tracking-wide text-white/70">IN</div>
+          <div className="mt-2 text-[28px] font-semibold leading-none text-white/45">
+            {totals.in ?? "—"}
+          </div>
+        </td>
+      </tr>
+    </>
   );
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur">
-      <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-        <div className="h-full w-full bg-[radial-gradient(circle_at_20%_0%,rgba(34,197,94,0.18),transparent_50%),radial-gradient(circle_at_90%_100%,rgba(16,185,129,0.14),transparent_55%)]" />
-      </div>
-
-      <div className="relative p-4">
-        <div className="flex items-start justify-between gap-3">
+    <div className="group relative overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(90deg,rgba(7,14,41,0.98),rgba(16,26,52,0.95))] shadow-[0_18px_60px_-32px_rgba(0,0,0,0.9)] backdrop-blur">
+      <div className="relative p-6 sm:p-8">
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-sm font-semibold text-white">{title}</div>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-white/70">
-              <Pill>
+            <div className="text-[26px] font-semibold tracking-tight text-white">{title}</div>
+            <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-white/70">
+              <span className="inline-flex items-center rounded-full border border-white/12 bg-white/[0.05] px-5 py-2 text-[18px] font-medium text-white/88 shadow-sm">
                 {left[0]}–{left[1]}
-              </Pill>
-              <span className="text-white/45">vs</span>
-              <Pill>
+              </span>
+              <span className="text-[18px] font-medium text-white/45">vs</span>
+              <span className="inline-flex items-center rounded-full border border-white/12 bg-white/[0.05] px-5 py-2 text-[18px] font-medium text-white/88 shadow-sm">
                 {right[0]}–{right[1]}
-              </Pill>
+              </span>
             </div>
           </div>
-          <Pill>{formatMatchSummary(score) ?? "Score"}</Pill>
+          <span className="inline-flex items-center rounded-full border border-white/12 bg-white/[0.05] px-6 py-3 text-[18px] font-medium text-white/88 shadow-sm">
+            {formatMatchSummary(score) ?? "Score"}
+          </span>
         </div>
 
-        <div className="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-black/20">
-          <div className="grid min-w-[980px] grid-cols-[200px_repeat(9,minmax(40px,1fr))_56px_repeat(9,minmax(40px,1fr))_56px_56px] border-b border-white/10 bg-white/[0.04]">
-            <div className="flex h-11 items-center px-3 text-xs font-semibold uppercase tracking-[0.16em] text-white/60">
-              Pairing
-            </div>
-            {frontNine.map((hole) => (
-              <Cell key={`head-front-${hole}`} value={hole} muted />
-            ))}
-            <Cell value="OUT" muted />
-            {backNine.map((hole) => (
-              <Cell key={`head-back-${hole}`} value={hole} muted />
-            ))}
-            <Cell value="IN" muted />
-            <Cell value="TOT" muted />
+        <div className="mt-8 overflow-x-auto">
+          <div className="overflow-hidden rounded-[26px] border border-white/10 bg-black/20">
+            <table className="min-w-[1540px] border-separate border-spacing-0">
+              <tbody>
+                {renderPairRows("left", leftName, score.left, leftTotals, true)}
+                {renderPairRows("right", rightName, score.right, rightTotals)}
+              </tbody>
+            </table>
           </div>
-
-          <ScoreRow name={leftName} holes={score.left} totals={leftTotals} />
-          <ScoreRow name={rightName} holes={score.right} totals={rightTotals} topBorder />
         </div>
       </div>
     </div>
