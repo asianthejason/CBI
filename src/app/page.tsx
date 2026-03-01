@@ -121,10 +121,9 @@ function TeamTable({ team }: { team: "A" | "B" | "C" | "D" }) {
           </div>
           <div>
             <div className="text-sm font-semibold text-white">Team {team}</div>
-            <div className="text-xs text-white/65">Roster (placeholder)</div>
+
           </div>
         </div>
-        <Pill>2026</Pill>
       </div>
 
       <div className="relative px-4 pb-4 pt-3">
@@ -199,46 +198,47 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
     players: [string, string];
     showTopBorder?: boolean;
   }) => (
-    <div className={"grid min-w-[760px] grid-cols-[160px_minmax(0,1fr)_84px] overflow-hidden " + (showTopBorder ? "border-t border-white/10" : "")}>
-      <div className="row-span-2 flex min-h-[106px] flex-col justify-center border-r border-white/10 px-3 py-3 text-[11px] font-semibold text-white/85 sm:px-4 sm:text-xs">
+    <div
+      className={
+        "grid grid-cols-[110px_repeat(10,minmax(0,1fr))_56px] overflow-hidden sm:grid-cols-[130px_repeat(10,minmax(0,1fr))_62px] " +
+        (showTopBorder ? "border-t border-white/10" : "")
+      }
+    >
+      <div className="row-span-2 flex min-h-[96px] flex-col justify-center border-r border-white/10 px-2 py-3 text-[11px] font-semibold leading-5 text-white/85 sm:px-3 sm:text-xs">
         <span className="truncate">{players[0]}</span>
-        <span className="mt-1 truncate text-white/65">{players[1]}</span>
+        <span className="truncate text-white/65">{players[1]}</span>
       </div>
 
-      <div className="grid grid-cols-10 border-b border-white/10 bg-white/[0.05]">
-        {[...frontNine, "OUT"].map((hole) => (
-          <div
-            key={`front-label-${players[0]}-${hole}`}
-            className="flex h-[52px] flex-col items-center justify-center px-0.5 text-center"
-          >
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:text-[11px]">
-              {hole}
-            </span>
-            <span className="mt-1 text-sm font-semibold text-white/35">—</span>
-          </div>
-        ))}
-      </div>
+      {[...frontNine, "OUT"].map((hole) => (
+        <div
+          key={`front-label-${players[0]}-${hole}`}
+          className="flex h-[48px] min-w-0 flex-col items-center justify-center border-b border-white/10 bg-white/[0.05] px-0 text-center"
+        >
+          <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
+            {hole}
+          </span>
+          <span className="mt-1 text-sm font-semibold leading-none text-white/35">—</span>
+        </div>
+      ))}
 
-      <div className="row-span-2 flex min-h-[106px] flex-col items-center justify-center border-l border-white/10 px-2 text-center">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/60 sm:text-[11px]">
+      <div className="row-span-2 flex min-h-[96px] flex-col items-center justify-center border-l border-white/10 px-1 text-center">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60 sm:text-[11px]">
           Tot
         </span>
-        <span className="mt-2 text-lg font-semibold text-white/35">—</span>
+        <span className="mt-2 text-base font-semibold text-white/35 sm:text-lg">—</span>
       </div>
 
-      <div className="grid grid-cols-10">
-        {[...backNine, "IN"].map((hole) => (
-          <div
-            key={`back-label-${players[0]}-${hole}`}
-            className="flex h-[52px] flex-col items-center justify-center px-0.5 text-center"
-          >
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:text-[11px]">
-              {hole}
-            </span>
-            <span className="mt-1 text-sm font-semibold text-white/35">—</span>
-          </div>
-        ))}
-      </div>
+      {[...backNine, "IN"].map((hole) => (
+        <div
+          key={`back-label-${players[0]}-${hole}`}
+          className="flex h-[48px] min-w-0 flex-col items-center justify-center px-0 text-center"
+        >
+          <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
+            {hole}
+          </span>
+          <span className="mt-1 text-sm font-semibold leading-none text-white/35">—</span>
+        </div>
+      ))}
     </div>
   );
 
@@ -265,18 +265,11 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
           <Pill>Score</Pill>
         </div>
 
-        <div className="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-black/20">
+        <div className="mt-4 rounded-xl border border-white/10 bg-black/20">
           <ScoreStrip players={rowTeams[0] as [string, string]} />
           <ScoreStrip players={rowTeams[1] as [string, string]} showTopBorder />
         </div>
 
-        <div className="mt-3 flex items-center justify-between gap-3 text-xs text-white/55">
-          <span className="inline-flex items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/80" />
-            Admin page coming soon for scores
-          </span>
-          <span className="hidden sm:inline">Front 9 + back 9 now mirror the live scorecard layout</span>
-        </div>
       </div>
     </div>
   );
@@ -398,19 +391,15 @@ export default function Home() {
           <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-emerald-400/20 blur-3xl" />
           <div className="absolute -right-24 -bottom-24 h-72 w-72 rounded-full bg-lime-300/10 blur-3xl" />
 
-          <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex max-w-xl flex-col justify-center">
+          <div className="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs font-semibold text-white/80">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                2026 Season
               </div>
               <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-                Cockboys Invitational — Season Hub
+                Cockboys Invitational 2026
               </h1>
-              <p className="mt-3 text-sm leading-6 text-white/70 sm:text-base">
-                Draft countdown, team rosters, matchups, and scorecards — all in one clean,
-                golf-themed home page.
-              </p>
+
             </div>
 
             <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-black/20 p-4 sm:p-5">
@@ -418,10 +407,9 @@ export default function Home() {
                 <div>
                   <div className="text-sm font-semibold text-white">Countdown to Draft</div>
                   <div className="mt-1 text-xs text-white/60">
-                    Target: {draftDate.toLocaleString()}
+                    {draftDate.toLocaleString()}
                   </div>
                 </div>
-                {cd.done ? <Pill>It’s draft time 🏌️</Pill> : <Pill>Lock in</Pill>}
               </div>
 
               <div className="mt-4 grid grid-cols-4 gap-2 sm:gap-3">
@@ -452,8 +440,7 @@ export default function Home() {
         <section className="flex flex-col gap-4">
           <SectionTitle
             title="Teams"
-            subtitle="Four tables side-by-side (mobile-friendly). Names + scores will be editable later on the admin page."
-          />
+            />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <TeamTable team="A" />
             <TeamTable team="B" />
@@ -466,8 +453,7 @@ export default function Home() {
         <section className="flex flex-col gap-4">
           <SectionTitle
             title="Matchups"
-            subtitle="Use the round tabs to switch views. Each tab shows that round’s 4 matches in a single horizontal row on desktop."
-          />
+            />
 
           <div className="flex flex-wrap items-center gap-2">
             {(["Round 1", "Round 2", "Round 3"] as const).map((r) => {
@@ -498,7 +484,7 @@ export default function Home() {
             <div className="relative flex items-start justify-between gap-4">
               <div>
                 <div className="text-base font-semibold text-white">{activeMatchupSchedule.roundLabel}</div>
-                <div className="mt-1 text-xs text-white/65">4 matches</div>
+
               </div>
               <Pill>Matches</Pill>
             </div>
@@ -517,8 +503,7 @@ export default function Home() {
         <section className="flex flex-col gap-4">
           <SectionTitle
             title="Scorecards"
-            subtitle="Each round shows 4 half-width scorecards with front 9 on the first row and back 9 underneath for easier mobile viewing."
-          />
+/>
 
           <div className="flex flex-wrap items-center gap-2">
             {(
@@ -556,9 +541,6 @@ export default function Home() {
           </div>
         </section>
 
-        <footer className="pb-2 pt-6 text-center text-xs text-white/50">
-          Built for the 2026 season — admin + scoring tools coming next.
-        </footer>
       </main>
     </div>
   );
