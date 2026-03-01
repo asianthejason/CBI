@@ -203,7 +203,10 @@ function MatchupsRoundCard({ round }: { round: RoundSchedule }) {
 }
 
 function Scorecard({ title, left, right }: { title: string; left: Pair; right: Pair }) {
-  const holes = Array.from({ length: 9 }, (_, i) => i + 1);
+  const frontNine = Array.from({ length: 9 }, (_, i) => i + 1);
+  const backNine = Array.from({ length: 9 }, (_, i) => i + 10);
+  const columns = [...frontNine, "OUT", ...backNine, "IN", "TOT"] as const;
+
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur">
       <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
@@ -227,24 +230,21 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
           <Pill>Score</Pill>
         </div>
 
-        <div className="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-black/20">
-          <table className="min-w-[520px] w-full table-fixed">
+        <div className="mt-4 overflow-hidden rounded-xl border border-white/10 bg-black/20">
+          <table className="w-full table-fixed">
             <thead>
               <tr className="bg-white/[0.06]">
-                <th className="w-28 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-white/70">
-                  Hole
+                <th className="w-36 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-white/70">
+                  Team
                 </th>
-                {holes.map((h) => (
+                {columns.map((col) => (
                   <th
-                    key={h}
-                    className="px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-white/70"
+                    key={col}
+                    className="px-1 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:text-[11px]"
                   >
-                    {h}
+                    {col}
                   </th>
                 ))}
-                <th className="w-14 px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-white/70">
-                  TOT
-                </th>
               </tr>
             </thead>
             <tbody>
@@ -253,14 +253,14 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
                   <td className="px-3 py-2 text-xs font-semibold text-white/80">
                     {rowLabel}
                   </td>
-                  {holes.map((h) => (
-                    <td key={h} className="px-2 py-2 text-center text-sm text-white/35">
+                  {columns.map((col) => (
+                    <td
+                      key={col}
+                      className="px-1 py-2 text-center text-xs font-semibold text-white/35 sm:text-sm"
+                    >
                       —
                     </td>
                   ))}
-                  <td className="px-2 py-2 text-center text-sm font-semibold text-white/35">
-                    —
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -272,7 +272,7 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/80" />
             Admin page coming soon for scores
           </span>
-          <span className="hidden sm:inline">Swipe to view all holes →</span>
+          <span className="hidden sm:inline">Front 9, back 9, and total are ready for scoring</span>
         </div>
       </div>
     </div>
@@ -471,7 +471,7 @@ export default function Home() {
         <section className="flex flex-col gap-4">
           <SectionTitle
             title="Scorecards"
-            subtitle="3 tabs (Round 1–3). Each tab shows 4 match scorecards."
+            subtitle="Each round shows 4 full-width scorecards with holes 1–18, front-nine total, back-nine total, and grand total."
           />
 
           <div className="flex flex-wrap items-center gap-2">
@@ -498,7 +498,7 @@ export default function Home() {
             })}
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="flex flex-col gap-4">
             {activeSchedule.matches.map((m) => (
               <Scorecard
                 key={`${activeSchedule.roundLabel}-${m.id}`}
