@@ -220,9 +220,12 @@ export function getRoundSchedule(roundLabel: RoundLabel) {
   return ROUND_SCHEDULES.find((round) => round.roundLabel === roundLabel) ?? ROUND_SCHEDULES[0];
 }
 
-export function subscribeToLeagueState(callback: (state: LeagueState) => void) {
+export function subscribeToLeagueState(
+  onState: (state: LeagueState) => void,
+  onError?: (error: Error) => void,
+) {
   if (!isFirebaseConfigured() || !db) {
-    callback(getDefaultLeagueState());
+    onState(getDefaultLeagueState());
     return () => undefined;
   }
 
@@ -230,14 +233,16 @@ export function subscribeToLeagueState(callback: (state: LeagueState) => void) {
     leagueDocRef(),
     (snapshot) => {
       if (!snapshot.exists()) {
-        callback(getDefaultLeagueState());
+        onState(getDefaultLeagueState());
+        onError?.(null as never);
         return;
       }
 
-      callback(sanitizeLeagueState(snapshot.data()));
+      onState(sanitizeLeagueState(snapshot.data()));
+      onError?.(null as never);
     },
-    () => {
-      callback(getDefaultLeagueState());
+    (error) => {
+      onError?.(error instanceof Error ? error : new Error("Unable to read league data."));
     },
   );
 }
@@ -257,13 +262,21 @@ export async function resetLeagueState() {
 export function useLeagueState() {
   const [state, setState] = useState<LeagueState>(() => getDefaultLeagueState());
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const configured = isFirebaseConfigured();
 
   useEffect(() => {
-    const unsubscribe = subscribeToLeagueState((nextState) => {
-      setState(nextState);
-      setLoading(false);
-    });
+    const unsubscribe = subscribeToLeagueState(
+      (nextState) => {
+        setState(nextState);
+        setError(null);
+        setLoading(false);
+      },
+      (nextError) => {
+        setError(nextError?.message ?? null);
+        setLoading(false);
+      },
+    );
 
     return unsubscribe;
   }, []);
@@ -280,11 +293,12 @@ export function useLeagueState() {
     () => ({
       state,
       loading,
+      error,
       configured,
       saveState,
       resetState,
     }),
-    [configured, loading, resetState, saveState, state],
+    [configured, error, loading, resetState, saveState, state],
   );
 }
 

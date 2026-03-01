@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   ROUND_LABELS,
   ROUND_SCHEDULES,
@@ -34,7 +34,7 @@ function SectionTitle({ title, subtitle }: { title: string; subtitle?: string })
 }
 
 export default function AdminPage() {
-  const { state: liveState, configured, saveState, resetState } = useLeagueState();
+  const { state: liveState, configured, error: liveError, saveState, resetState } = useLeagueState();
   const { user, loading: authLoading, signIn, signOut } = useAdminAuth();
   const [activeRound, setActiveRound] = useState<RoundLabel>("Round 1");
   const [draftState, setDraftState] = useState<LeagueState>(getDefaultLeagueState());
@@ -42,12 +42,13 @@ export default function AdminPage() {
   const [saveMessage, setSaveMessage] = useState("Live sync ready");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [authMessage, setAuthMessage] = useState("Email/password sign-in ready");
-  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [authMessage, setAuthMessage] = useState("");
 
   useEffect(() => {
-    setDraftState(liveState);
-  }, [liveState]);
+    if (!isDirty) {
+      setDraftState(liveState);
+    }
+  }, [isDirty, liveState]);
 
   useEffect(() => {
     if (!user || !configured || !isDirty) {
@@ -67,6 +68,12 @@ export default function AdminPage() {
 
     return () => window.clearTimeout(timer);
   }, [configured, draftState, isDirty, saveState, user]);
+
+  useEffect(() => {
+    if (liveError) {
+      setSaveMessage(liveError);
+    }
+  }, [liveError]);
 
   const activeSchedule = useMemo(
     () => ROUND_SCHEDULES.find((round) => round.roundLabel === activeRound) ?? ROUND_SCHEDULES[0],
@@ -116,24 +123,14 @@ export default function AdminPage() {
     }
   };
 
-  const handleSignIn = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!email.trim() || !password) {
-      setAuthMessage("Enter your admin email and password.");
-      return;
-    }
+  const handleSignIn = async () => {
+    setAuthMessage("");
 
     try {
-      setIsSigningIn(true);
-      setAuthMessage("Signing in...");
       await signIn(email, password);
       setPassword("");
-      setAuthMessage("Signed in");
     } catch (error) {
-      setAuthMessage(error instanceof Error ? error.message : "Sign-in failed");
-    } finally {
-      setIsSigningIn(false);
+      setAuthMessage(error instanceof Error ? error.message : "Sign in failed");
     }
   };
 
@@ -158,7 +155,7 @@ export default function AdminPage() {
 
             <div className="flex flex-wrap items-center gap-2">
               <Pill>{saveMessage}</Pill>
-              <Pill>{user ? user.email ?? "Signed in" : authMessage}</Pill>
+              {user ? <Pill>{user.email ?? "Signed in"}</Pill> : null}
               {user ? (
                 <button
                   type="button"
@@ -174,7 +171,7 @@ export default function AdminPage() {
 
         {!configured ? (
           <section className="rounded-2xl border border-amber-300/20 bg-amber-300/10 p-5 text-sm text-amber-50 backdrop-blur">
-            Add your Firebase web app keys to <span className="font-semibold">.env.local</span> locally and to Vercel project environment variables for the deployed site.
+            Add your Firebase web app keys to <span className="font-semibold">.env.local</span> and Vercel env vars before using this page.
           </section>
         ) : authLoading ? (
           <section className="rounded-2xl border border-white/10 bg-white/5 p-5 text-sm text-white/75 backdrop-blur">
@@ -182,42 +179,47 @@ export default function AdminPage() {
           </section>
         ) : !user ? (
           <section className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur">
-            <form className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end" onSubmit={handleSignIn}>
+            <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
               <label className="block">
-                <div className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-white/55">Admin Email</div>
+                <div className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Email</div>
                 <input
-                  type="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
+                  type="email"
                   autoComplete="email"
                   className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-emerald-300/40"
-                  placeholder="you@example.com"
+                  placeholder="admin@cbi.com"
                 />
               </label>
-
               <label className="block">
-                <div className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-white/55">Password</div>
+                <div className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Password</div>
                 <input
-                  type="password"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
+                  type="password"
                   autoComplete="current-password"
                   className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-emerald-300/40"
                   placeholder="Enter password"
                 />
               </label>
-
               <button
-                type="submit"
-                disabled={isSigningIn}
-                className="rounded-full bg-emerald-400 px-5 py-3 text-sm font-semibold text-black shadow-[0_10px_30px_-18px_rgba(52,211,153,0.9)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
+                type="button"
+                onClick={() => void handleSignIn()}
+                className="rounded-full bg-emerald-400 px-5 py-3 text-sm font-semibold text-black shadow-[0_10px_30px_-18px_rgba(52,211,153,0.9)] transition hover:brightness-105"
               >
-                {isSigningIn ? "Signing In..." : "Sign In"}
+                Sign In
               </button>
-            </form>
+            </div>
+            {authMessage ? <p className="mt-3 text-sm text-rose-200">{authMessage}</p> : null}
           </section>
         ) : (
           <>
+            {liveError ? (
+              <section className="rounded-2xl border border-rose-300/20 bg-rose-300/10 p-5 text-sm text-rose-50 backdrop-blur">
+                Firestore can&apos;t read or write this league document right now. Check your Firestore rules and make sure the signed-in email is allowed.
+              </section>
+            ) : null}
+
             <section className="flex flex-col gap-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <SectionTitle
@@ -308,50 +310,59 @@ export default function AdminPage() {
                       <div className="h-full w-full bg-[radial-gradient(circle_at_20%_0%,rgba(34,197,94,0.18),transparent_50%),radial-gradient(circle_at_90%_100%,rgba(16,185,129,0.14),transparent_55%)]" />
                     </div>
 
-                    <div className="relative mb-4 flex items-center justify-between gap-3">
-                      <div>
-                        <div className="text-sm font-semibold text-white">
-                          {activeSchedule.roundLabel} — Match {match.id}
-                        </div>
-                        <div className="mt-1 text-xs text-white/55">Live updates flow to matchup cards and scorecards.</div>
-                      </div>
-                      <Pill>Match {match.id}</Pill>
-                    </div>
-
-                    <div className="relative space-y-3">
-                      {([
-                        { side: "left", pair: match.left },
-                        { side: "right", pair: match.right },
-                      ] as const).map((entry) => (
-                        <div
-                          key={`${activeSchedule.roundLabel}-${match.id}-${entry.side}`}
-                          className="rounded-xl border border-white/10 bg-black/20 p-3"
-                        >
-                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                              <div className="text-sm font-semibold text-white/90">
-                                {getPlayerName(draftState.playerNames, entry.pair[0])} / {getPlayerName(draftState.playerNames, entry.pair[1])}
-                              </div>
-                              <div className="mt-1 text-xs uppercase tracking-[0.16em] text-white/45">
-                                {entry.pair[0]} · {entry.pair[1]}
-                              </div>
-                            </div>
-
-                            <label className="flex items-center gap-2">
-                              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-white/55">Score</span>
-                              <input
-                                type="number"
-                                min="0"
-                                value={draftState.matchScores[activeSchedule.roundLabel][match.id][entry.side] ?? ""}
-                                onChange={(event) =>
-                                  updateScore(activeSchedule.roundLabel, match.id, entry.side, event.target.value)
-                                }
-                                className="w-24 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-emerald-300/40"
-                              />
-                            </label>
+                    <div className="relative flex flex-col gap-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-semibold text-white">Match {match.id}</div>
+                          <div className="mt-1 text-xs uppercase tracking-[0.18em] text-white/45">
+                            {activeSchedule.roundLabel}
                           </div>
                         </div>
-                      ))}
+                        <Pill>Live scoring</Pill>
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+                        <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+                          <div className="text-xs uppercase tracking-[0.18em] text-white/45">Left Side</div>
+                          <div className="mt-2 text-sm font-semibold text-white">
+                            {getPlayerName(draftState.playerNames, match.left[0])} / {getPlayerName(draftState.playerNames, match.left[1])}
+                          </div>
+                        </div>
+
+                        <div className="text-center text-xs font-semibold uppercase tracking-[0.22em] text-white/40">
+                          vs
+                        </div>
+
+                        <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+                          <div className="text-xs uppercase tracking-[0.18em] text-white/45">Right Side</div>
+                          <div className="mt-2 text-sm font-semibold text-white">
+                            {getPlayerName(draftState.playerNames, match.right[0])} / {getPlayerName(draftState.playerNames, match.right[1])}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="block">
+                          <div className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Left Score</div>
+                          <input
+                            value={draftState.matchScores[activeSchedule.roundLabel][match.id]?.left ?? ""}
+                            onChange={(event) => updateScore(activeSchedule.roundLabel, match.id, "left", event.target.value)}
+                            inputMode="numeric"
+                            className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-emerald-300/40"
+                            placeholder="Enter score"
+                          />
+                        </label>
+                        <label className="block">
+                          <div className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Right Score</div>
+                          <input
+                            value={draftState.matchScores[activeSchedule.roundLabel][match.id]?.right ?? ""}
+                            onChange={(event) => updateScore(activeSchedule.roundLabel, match.id, "right", event.target.value)}
+                            inputMode="numeric"
+                            className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-emerald-300/40"
+                            placeholder="Enter score"
+                          />
+                        </label>
+                      </div>
                     </div>
                   </div>
                 ))}
