@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   BACK_NINE,
@@ -18,7 +19,7 @@ import {
   useAdminAuth,
   useLeagueState,
   calculateScoreTotals,
-} from "../league-store";
+} from "../lib/league-store";
 
 function Pill({ children }: { children: ReactNode }) {
   return (
@@ -59,7 +60,7 @@ function HoleInput({
         inputMode="numeric"
         value={value ?? ""}
         onChange={(event) => onChange(event.target.value)}
-        className="h-10 w-full min-w-0 rounded-lg border border-white/10 bg-black/25 px-1 text-center text-sm font-semibold text-white outline-none transition placeholder:text-white/20 focus:border-emerald-300/40"
+        className="h-9 w-full min-w-0 rounded-lg border border-white/10 bg-black/25 px-1 text-center text-sm font-semibold text-white outline-none transition placeholder:text-white/20 focus:border-emerald-300/40"
         placeholder="—"
       />
     </div>
@@ -80,10 +81,10 @@ function ScoreboardRow({
   const totals = calculateScoreTotals(scores);
 
   return (
-    <div className="grid min-w-[1080px] grid-cols-[220px_minmax(0,1fr)_96px] border-t border-white/10 first:border-t-0 md:min-w-0">
-      <div className="flex flex-col justify-center border-r border-white/10 bg-black/22 px-6 py-5">
-        <div className="text-[15px] font-semibold text-white">{title}</div>
-        <div className="mt-1 text-[13px] text-white/72">{subtitle}</div>
+    <div className="grid min-w-[620px] grid-cols-[118px_minmax(0,1fr)_62px] border-t border-white/10 first:border-t-0">
+      <div className="flex flex-col justify-center border-r border-white/10 bg-black/22 px-3 py-4 sm:px-4">
+        <div className="text-[14px] font-semibold text-white">{title}</div>
+        <div className="mt-1 text-[12px] text-white/72">{subtitle}</div>
       </div>
 
       <div className="grid min-w-0 grid-rows-2">
@@ -122,9 +123,9 @@ function ScoreboardRow({
         </div>
       </div>
 
-      <div className="flex flex-col items-center justify-center border-l border-white/10 bg-black/22 px-3 py-4 text-center">
+      <div className="flex flex-col items-center justify-center border-l border-white/10 bg-black/22 px-2 py-4 text-center">
         <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">TOT</div>
-        <div className="mt-3 text-2xl font-semibold text-white">
+        <div className="mt-2 text-xl font-semibold text-white">
           <ScoreValue value={totals.total} />
         </div>
       </div>
@@ -266,10 +267,15 @@ export default function AdminPage() {
 
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">
-              <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">League Admin</h1>
-              <p className="mt-3 text-sm text-white/65 sm:text-base">
-                Update team names and hole-by-hole match scores here. Firestore pushes those changes live to the site.
-              </p>
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">League Admin</h1>
+                <Link
+                  href="/"
+                  className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/85 transition hover:bg-white/8"
+                >
+                  Home
+                </Link>
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -396,10 +402,7 @@ export default function AdminPage() {
             </section>
 
             <section className="flex flex-col gap-4">
-              <SectionTitle
-                title="Match Scores"
-                subtitle="Enter the stroke count for each hole. OUT, IN, and TOT are calculated automatically."
-              />
+              <SectionTitle title="Match Scores" />
 
               <div className="flex flex-wrap items-center gap-2">
                 {ROUND_LABELS.map((round) => {
@@ -423,23 +426,23 @@ export default function AdminPage() {
                 })}
               </div>
 
-              <div className="grid gap-6">
+              <div className="grid gap-6 xl:grid-cols-2">
                 {activeSchedule.matches.map((match) => (
                   <section
                     key={`${activeSchedule.roundLabel}-${match.id}`}
-                    className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#07102a]/90 shadow-[0_18px_60px_-32px_rgba(0,0,0,0.9)] backdrop-blur"
+                    className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#07102a]/90 shadow-[0_18px_60px_-32px_rgba(0,0,0,0.9)] backdrop-blur xl:self-start"
                   >
-                    <div className="flex flex-col gap-4 border-b border-white/10 px-5 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex flex-col gap-3 border-b border-white/10 px-4 py-4 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
                       <div>
-                        <h3 className="text-2xl font-semibold tracking-tight text-white">
+                        <h3 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">
                           {activeSchedule.roundLabel} — Match {match.id}
                         </h3>
-                        <div className="mt-3 flex flex-wrap items-center gap-3 text-white/80">
-                          <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium">
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-white/80">
+                          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm font-medium">
                             {getPairLabel(match.left)}
                           </span>
                           <span className="text-lg text-white/45">vs</span>
-                          <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium">
+                          <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm font-medium">
                             {getPairLabel(match.right)}
                           </span>
                         </div>

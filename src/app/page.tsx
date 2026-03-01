@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   ROUND_LABELS,
@@ -226,11 +227,11 @@ function Scorecard({
     return (
       <div
         className={
-          "grid grid-cols-[110px_repeat(10,minmax(0,1fr))_56px] overflow-hidden sm:grid-cols-[130px_repeat(10,minmax(0,1fr))_62px] " +
+          "grid grid-cols-[92px_repeat(10,minmax(0,1fr))_52px] overflow-hidden sm:grid-cols-[108px_repeat(10,minmax(0,1fr))_58px] " +
           (showTopBorder ? "border-t border-white/10" : "")
         }
       >
-        <div className="row-span-2 flex min-h-[96px] flex-col justify-center border-r border-white/10 px-2 py-3 text-[11px] font-semibold leading-5 text-white/85 sm:px-3 sm:text-xs">
+        <div className="row-span-2 flex min-h-[96px] flex-col justify-center border-r border-white/10 px-1.5 py-3 text-[10px] font-semibold leading-5 text-white/85 sm:px-2 sm:text-[11px]">
           <span className="truncate">{players[0]}</span>
           <span className="truncate text-white/65">{players[1]}</span>
         </div>
@@ -348,9 +349,17 @@ export default function Home() {
 
           <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-xl">
-              <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-                Cockboys Invitational 2026
-              </h1>
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                  Cockboys Invitational 2026
+                </h1>
+                <Link
+                  href="/admin"
+                  className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/85 transition hover:bg-white/8"
+                >
+                  Admin
+                </Link>
+              </div>
             </div>
 
             <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-black/20 p-4 sm:p-5">
