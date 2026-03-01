@@ -5,9 +5,11 @@ import {
   ROUND_LABELS,
   TEAM_IDS,
   TEAM_SLOT_LABELS,
+  calculateScoreTotals,
   getPlayerName,
   getRoundSchedule,
   getTeamPlayerLabels,
+  type MatchHoleScore,
   type Pair,
   type RoundLabel,
   type TeamId,
@@ -149,9 +151,11 @@ function MatchupCard({
 }: {
   match: { id: number; left: Pair; right: Pair };
   playerNames: Record<string, string>;
-  score: { left: number | null; right: number | null };
+  score: MatchHoleScore;
 }) {
-  const hasScore = typeof score.left === "number" && typeof score.right === "number";
+  const leftTotal = calculateScoreTotals(score.left).total;
+  const rightTotal = calculateScoreTotals(score.right).total;
+  const hasScore = typeof leftTotal === "number" && typeof rightTotal === "number";
 
   return (
     <div className="relative min-w-[280px] overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur">
@@ -167,7 +171,7 @@ function MatchupCard({
         </div>
         {hasScore ? (
           <Pill>
-            {score.left} - {score.right}
+            {leftTotal} - {rightTotal}
           </Pill>
         ) : null}
       </div>
@@ -192,7 +196,7 @@ function Scorecard({
   left: Pair;
   right: Pair;
   playerNames: Record<string, string>;
-  score: { left: number | null; right: number | null };
+  score: MatchHoleScore;
 }) {
   const frontNine = Array.from({ length: 9 }, (_, i) => i + 1);
   const backNine = Array.from({ length: 9 }, (_, i) => i + 10);
@@ -201,8 +205,10 @@ function Scorecard({
     [getPlayerName(playerNames, right[0]), getPlayerName(playerNames, right[1])],
   ] as const;
 
-  const totals = [score.left, score.right] as const;
-  const hasScore = typeof score.left === "number" && typeof score.right === "number";
+  const leftTotals = calculateScoreTotals(score.left);
+  const rightTotals = calculateScoreTotals(score.right);
+  const totals = [leftTotals.total, rightTotals.total] as const;
+  const hasScore = typeof leftTotals.total === "number" && typeof rightTotals.total === "number";
 
   const ScoreStrip = ({
     players,
@@ -279,7 +285,7 @@ function Scorecard({
               </Pill>
             </div>
           </div>
-          <Pill>{hasScore ? `${score.left} - ${score.right}` : "Score"}</Pill>
+          <Pill>{hasScore ? `${leftTotals.total} - ${rightTotals.total}` : "Score"}</Pill>
         </div>
 
         <div className="mt-4 rounded-xl border border-white/10 bg-black/20">
