@@ -4,6 +4,49 @@ import { useEffect, useMemo, useState } from "react";
 
 type Pair = [string, string];
 
+const playerNames: Record<string, string> = {
+  A1: "Jason Huang",
+  A2: "Mason Lee",
+  A3: "Noah Kim",
+  A4: "Ethan Park",
+  B1: "Liam Chen",
+  B2: "Owen Tran",
+  B3: "Lucas Wong",
+  B4: "Daniel Yu",
+  C1: "Ryan Patel",
+  C2: "Aiden Smith",
+  C3: "Caleb Nguyen",
+  C4: "Jack Wilson",
+  D1: "Ben Thompson",
+  D2: "Cole Anderson",
+  D3: "Tyler Brown",
+  D4: "Logan Martin",
+};
+
+function getPlayerName(label: string) {
+  return playerNames[label] ?? `Player ${label}`;
+}
+
+function PlayerBadge({ label }: { label: string }) {
+  return (
+    <div className="inline-flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/90 shadow-sm">
+      <span className="font-semibold text-emerald-200">{label}</span>
+      <span className="truncate text-white/70">{getPlayerName(label)}</span>
+    </div>
+  );
+}
+
+function PairStack({ pair }: { pair: Pair }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
+      <div className="flex flex-col gap-2">
+        <PlayerBadge label={pair[0]} />
+        <PlayerBadge label={pair[1]} />
+      </div>
+    </div>
+  );
+}
+
 type RoundSchedule = {
   roundLabel: "Round 1" | "Round 2" | "Round 3";
   teamPairs: Record<"A" | "B" | "C" | "D", Pair[]>;
@@ -126,51 +169,54 @@ function MatchupsRoundCard({ round }: { round: RoundSchedule }) {
       <div className="relative flex items-start justify-between gap-4">
         <div>
           <div className="text-base font-semibold text-white">{round.roundLabel}</div>
-          <div className="mt-1 text-xs text-white/65">Pairs + matchups</div>
+          <div className="mt-1 text-xs text-white/65">Pairings + matches</div>
         </div>
         <Pill>8 groups</Pill>
       </div>
 
-      <div className="relative mt-4 grid gap-4 lg:grid-cols-2">
+      <div className="relative mt-4 flex flex-col gap-4">
         <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-          <div className="mb-2 text-xs font-semibold tracking-wide text-white/70">
-            Team pairs
+          <div className="mb-3 text-xs font-semibold tracking-wide text-white/70">
+            Team pairings
           </div>
-          <div className="flex flex-col gap-2 text-sm">
+          <div className="flex flex-col gap-3">
             {(
               ["A", "B", "C", "D"] as const
             ).map((t) => (
-              <div key={t} className="flex flex-wrap items-center gap-2">
-                <span className="w-14 text-xs font-semibold text-white/75">
+              <div key={t} className="rounded-xl border border-white/8 bg-white/[0.03] p-3">
+                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-white/70">
                   Team {t}
-                </span>
-                {round.teamPairs[t].map((p) => (
-                  <Pill key={`${t}-${p[0]}-${p[1]}`}>{`(${p[0]}–${p[1]})`}</Pill>
-                ))}
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {round.teamPairs[t].map((p) => (
+                    <PairStack key={`${t}-${p[0]}-${p[1]}`} pair={p} />
+                  ))}
+                </div>
               </div>
             ))}
           </div>
         </div>
 
         <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-          <div className="mb-2 text-xs font-semibold tracking-wide text-white/70">
+          <div className="mb-3 text-xs font-semibold tracking-wide text-white/70">
             Matches
           </div>
-          <ol className="flex flex-col gap-2">
+          <ol className="flex flex-col gap-3">
             {round.matches.map((m) => (
-              <li key={m.id} className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
+              <li key={m.id} className="rounded-xl border border-white/8 bg-white/[0.03] p-3">
+                <div className="mb-3 flex items-center gap-2">
                   <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-white/10 text-xs font-semibold text-white/85">
                     {m.id}
                   </span>
-                  <span className="text-sm text-white/90">
-                    ({m.left[0]}–{m.left[1]})
-                  </span>
+                  <span className="text-sm font-semibold text-white/90">Match {m.id}</span>
                 </div>
-                <span className="text-xs text-white/45">vs</span>
-                <span className="text-sm text-white/90">
-                  ({m.right[0]}–{m.right[1]})
-                </span>
+                <div className="grid gap-3 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
+                  <PairStack pair={m.left} />
+                  <div className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
+                    vs
+                  </div>
+                  <PairStack pair={m.right} />
+                </div>
               </li>
             ))}
           </ol>
@@ -435,8 +481,8 @@ export default function Home() {
         {/* MATCHUPS */}
         <section className="flex flex-col gap-4">
           <SectionTitle
-            title="Weekend Matchups"
-            subtitle="Schedule layout inspired by your screenshots — clean, aligned, and easy to scan."
+            title="Matchups"
+            subtitle="Pairings and matches are stacked for more room so player labels and names stay easy to read."
           />
           <div className="grid gap-4 lg:grid-cols-3">
             {rounds.map((r) => (
