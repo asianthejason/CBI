@@ -2,14 +2,12 @@
 
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
-  calculateScoreTotals,
   ROUND_LABELS,
   TEAM_IDS,
   TEAM_SLOT_LABELS,
   getPlayerName,
   getRoundSchedule,
   getTeamPlayerLabels,
-  type MatchHoleScore,
   type Pair,
   type RoundLabel,
   type TeamId,
@@ -31,13 +29,14 @@ function useCountdown(target: Date) {
 
   const safeNow = now ?? new Date();
   const diffMs = target.getTime() - safeNow.getTime();
+  const done = diffMs <= 0;
   const totalSec = Math.floor(Math.max(0, diffMs) / 1000);
   const days = Math.floor(totalSec / (24 * 3600));
   const hours = Math.floor((totalSec % (24 * 3600)) / 3600);
   const minutes = Math.floor((totalSec % 3600) / 60);
   const seconds = totalSec % 60;
 
-  return { days, hours, minutes, seconds };
+  return { days, hours, minutes, seconds, done };
 }
 
 function Pill({ children }: { children: ReactNode }) {
@@ -143,17 +142,6 @@ function TeamTable({
   );
 }
 
-function formatMatchSummary(score: MatchHoleScore) {
-  const leftTotals = calculateScoreTotals(score.left);
-  const rightTotals = calculateScoreTotals(score.right);
-
-  if (leftTotals.total === null && rightTotals.total === null) {
-    return null;
-  }
-
-  return `${leftTotals.total ?? 0} - ${rightTotals.total ?? 0}`;
-}
-
 function MatchupCard({
   match,
   playerNames,
@@ -161,9 +149,9 @@ function MatchupCard({
 }: {
   match: { id: number; left: Pair; right: Pair };
   playerNames: Record<string, string>;
-  score: MatchHoleScore;
+  score: { left: number | null; right: number | null };
 }) {
-  const summary = formatMatchSummary(score);
+  const hasScore = typeof score.left === "number" && typeof score.right === "number";
 
   return (
     <div className="relative min-w-[280px] overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur">
@@ -177,7 +165,11 @@ function MatchupCard({
           </span>
           <span className="text-sm font-semibold text-white/90">Match {match.id}</span>
         </div>
-        {summary ? <Pill>{summary}</Pill> : null}
+        {hasScore ? (
+          <Pill>
+            {score.left} - {score.right}
+          </Pill>
+        ) : null}
       </div>
 
       <div className="relative flex min-w-0 flex-col gap-3">
@@ -188,7 +180,6 @@ function MatchupCard({
     </div>
   );
 }
-
 
 function Scorecard({
   title,
@@ -201,121 +192,99 @@ function Scorecard({
   left: Pair;
   right: Pair;
   playerNames: Record<string, string>;
-  score: MatchHoleScore;
+  score: { left: number | null; right: number | null };
 }) {
   const frontNine = Array.from({ length: 9 }, (_, i) => i + 1);
   const backNine = Array.from({ length: 9 }, (_, i) => i + 10);
+  const rowTeams = [
+    [getPlayerName(playerNames, left[0]), getPlayerName(playerNames, left[1])],
+    [getPlayerName(playerNames, right[0]), getPlayerName(playerNames, right[1])],
+  ] as const;
 
-  const leftName = `${getPlayerName(playerNames, left[0])}
-${getPlayerName(playerNames, left[1])}`;
-  const rightName = `${getPlayerName(playerNames, right[0])}
-${getPlayerName(playerNames, right[1])}`;
-  const leftTotals = calculateScoreTotals(score.left);
-  const rightTotals = calculateScoreTotals(score.right);
+  const totals = [score.left, score.right] as const;
+  const hasScore = typeof score.left === "number" && typeof score.right === "number";
 
-  const renderPairRows = (
-    pairKey: string,
-    name: string,
-    holes: Array<number | null>,
-    totals: { out: number | null; in: number | null; total: number | null },
-    topGroup = false,
-  ) => (
-    <>
-      <tr className={topGroup ? "" : "border-t border-white/10"}>
-        <td
-          rowSpan={2}
-          className="w-[260px] min-w-[260px] border-r border-white/10 px-6 py-7 align-middle"
+  const ScoreStrip = ({
+    players,
+    total,
+    showTopBorder,
+  }: {
+    players: readonly [string, string];
+    total: number | null;
+    showTopBorder?: boolean;
+  }) => (
+    <div
+      className={
+        "grid grid-cols-[110px_repeat(10,minmax(0,1fr))_56px] overflow-hidden sm:grid-cols-[130px_repeat(10,minmax(0,1fr))_62px] " +
+        (showTopBorder ? "border-t border-white/10" : "")
+      }
+    >
+      <div className="row-span-2 flex min-h-[96px] flex-col justify-center border-r border-white/10 px-2 py-3 text-[11px] font-semibold leading-5 text-white/85 sm:px-3 sm:text-xs">
+        <span className="truncate">{players[0]}</span>
+        <span className="truncate text-white/65">{players[1]}</span>
+      </div>
+
+      {[...frontNine, "OUT"].map((hole) => (
+        <div
+          key={`front-label-${players[0]}-${hole}`}
+          className="flex h-[48px] min-w-0 flex-col items-center justify-center border-b border-white/10 bg-white/[0.05] px-0 text-center"
         >
-          <div className="whitespace-pre-line text-[24px] font-semibold leading-[1.45] text-white/88">
-            {name}
-          </div>
-        </td>
+          <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
+            {hole}
+          </span>
+          <span className="mt-1 text-sm font-semibold leading-none text-white/35">—</span>
+        </div>
+      ))}
 
-        {frontNine.map((holeNumber, index) => (
-          <td
-            key={`${pairKey}-front-${holeNumber}`}
-            className="h-[62px] min-w-[76px] border-r border-white/10 bg-white/[0.05] text-center align-middle"
-          >
-            <div className="text-[18px] font-semibold text-white/70">{holeNumber}</div>
-            <div className="mt-2 text-[28px] font-semibold leading-none text-white/45">
-              {holes[index] ?? "—"}
-            </div>
-          </td>
-        ))}
+      <div className="row-span-2 flex min-h-[96px] flex-col items-center justify-center border-l border-white/10 px-1 text-center">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60 sm:text-[11px]">
+          Tot
+        </span>
+        <span className="mt-2 text-base font-semibold text-white/85 sm:text-lg">
+          {typeof total === "number" ? total : "—"}
+        </span>
+      </div>
 
-        <td className="h-[62px] min-w-[92px] border-r border-white/10 bg-white/[0.05] text-center align-middle">
-          <div className="text-[18px] font-semibold uppercase tracking-wide text-white/70">OUT</div>
-          <div className="mt-2 text-[28px] font-semibold leading-none text-white/45">
-            {totals.out ?? "—"}
-          </div>
-        </td>
-
-        <td
-          rowSpan={2}
-          className="min-w-[120px] bg-black/35 px-5 py-6 text-center align-middle"
+      {[...backNine, "IN"].map((hole) => (
+        <div
+          key={`back-label-${players[0]}-${hole}`}
+          className="flex h-[48px] min-w-0 flex-col items-center justify-center px-0 text-center"
         >
-          <div className="text-[18px] font-semibold uppercase tracking-[0.18em] text-white/60">
-            TOT
-          </div>
-          <div className="mt-5 text-[36px] font-semibold leading-none text-white/88">
-            {totals.total ?? "—"}
-          </div>
-        </td>
-      </tr>
-
-      <tr>
-        {backNine.map((holeNumber, index) => (
-          <td
-            key={`${pairKey}-back-${holeNumber}`}
-            className="h-[62px] min-w-[76px] border-r border-t border-white/10 bg-white/[0.05] text-center align-middle"
-          >
-            <div className="text-[18px] font-semibold text-white/70">{holeNumber}</div>
-            <div className="mt-2 text-[28px] font-semibold leading-none text-white/45">
-              {holes[index + 9] ?? "—"}
-            </div>
-          </td>
-        ))}
-
-        <td className="h-[62px] min-w-[92px] border-r border-t border-white/10 bg-white/[0.05] text-center align-middle">
-          <div className="text-[18px] font-semibold uppercase tracking-wide text-white/70">IN</div>
-          <div className="mt-2 text-[28px] font-semibold leading-none text-white/45">
-            {totals.in ?? "—"}
-          </div>
-        </td>
-      </tr>
-    </>
+          <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
+            {hole}
+          </span>
+          <span className="mt-1 text-sm font-semibold leading-none text-white/35">—</span>
+        </div>
+      ))}
+    </div>
   );
 
   return (
-    <div className="group relative overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(90deg,rgba(7,14,41,0.98),rgba(16,26,52,0.95))] shadow-[0_18px_60px_-32px_rgba(0,0,0,0.9)] backdrop-blur">
-      <div className="relative p-6 sm:p-8">
-        <div className="flex items-start justify-between gap-4">
+    <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur">
+      <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+        <div className="h-full w-full bg-[radial-gradient(circle_at_20%_0%,rgba(34,197,94,0.18),transparent_50%),radial-gradient(circle_at_90%_100%,rgba(16,185,129,0.14),transparent_55%)]" />
+      </div>
+
+      <div className="relative p-4">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-[26px] font-semibold tracking-tight text-white">{title}</div>
-            <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-white/70">
-              <span className="inline-flex items-center rounded-full border border-white/12 bg-white/[0.05] px-5 py-2 text-[18px] font-medium text-white/88 shadow-sm">
+            <div className="text-sm font-semibold text-white">{title}</div>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-white/70">
+              <Pill>
                 {left[0]}–{left[1]}
-              </span>
-              <span className="text-[18px] font-medium text-white/45">vs</span>
-              <span className="inline-flex items-center rounded-full border border-white/12 bg-white/[0.05] px-5 py-2 text-[18px] font-medium text-white/88 shadow-sm">
+              </Pill>
+              <span className="text-white/45">vs</span>
+              <Pill>
                 {right[0]}–{right[1]}
-              </span>
+              </Pill>
             </div>
           </div>
-          <span className="inline-flex items-center rounded-full border border-white/12 bg-white/[0.05] px-6 py-3 text-[18px] font-medium text-white/88 shadow-sm">
-            {formatMatchSummary(score) ?? "Score"}
-          </span>
+          <Pill>{hasScore ? `${score.left} - ${score.right}` : "Score"}</Pill>
         </div>
 
-        <div className="mt-8 overflow-x-auto">
-          <div className="overflow-hidden rounded-[26px] border border-white/10 bg-black/20">
-            <table className="min-w-[1540px] border-separate border-spacing-0">
-              <tbody>
-                {renderPairRows("left", leftName, score.left, leftTotals, true)}
-                {renderPairRows("right", rightName, score.right, rightTotals)}
-              </tbody>
-            </table>
-          </div>
+        <div className="mt-4 rounded-xl border border-white/10 bg-black/20">
+          <ScoreStrip players={rowTeams[0]} total={totals[0]} />
+          <ScoreStrip players={rowTeams[1]} total={totals[1]} showTopBorder />
         </div>
       </div>
     </div>
@@ -465,7 +434,7 @@ export default function Home() {
             })}
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-1">
+          <div className="grid gap-4 lg:grid-cols-2">
             {activeSchedule.matches.map((match) => (
               <Scorecard
                 key={`${activeSchedule.roundLabel}-${match.id}`}
