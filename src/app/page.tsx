@@ -38,7 +38,7 @@ function PlayerBadge({ label }: { label: string }) {
 
 function PairStack({ pair }: { pair: Pair }) {
   return (
-    <div className="min-w-0 rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
+    <div className="min-w-0">
       <div className="flex flex-col gap-2">
         <PlayerBadge label={pair[0]} />
         <PlayerBadge label={pair[1]} />
