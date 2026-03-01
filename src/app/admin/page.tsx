@@ -52,15 +52,15 @@ function HoleInput({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="flex min-w-0 flex-col items-center gap-2 px-1.5 py-2 text-center">
-      <div className="text-[11px] font-semibold text-white/55">{hole}</div>
+    <div className="flex min-w-0 flex-col items-center gap-1 px-0.5 py-1.5 text-center sm:px-1 sm:py-2">
+      <div className="text-[10px] font-semibold text-white/55 sm:text-[11px]">{hole}</div>
       <input
         type="number"
         min="1"
         inputMode="numeric"
         value={value ?? ""}
         onChange={(event) => onChange(event.target.value)}
-        className="h-9 w-full min-w-0 rounded-lg border border-white/10 bg-black/25 px-1 text-center text-sm font-semibold text-white outline-none transition placeholder:text-white/20 focus:border-emerald-300/40"
+        className="h-8 w-full min-w-0 rounded-md border border-white/10 bg-black/25 px-0.5 text-center text-xs font-semibold text-white outline-none transition placeholder:text-white/20 focus:border-emerald-300/40 sm:h-9 sm:rounded-lg sm:text-sm"
         placeholder="—"
       />
     </div>
@@ -81,10 +81,10 @@ function ScoreboardRow({
   const totals = calculateScoreTotals(scores);
 
   return (
-    <div className="grid min-w-[620px] grid-cols-[118px_minmax(0,1fr)_62px] border-t border-white/10 first:border-t-0">
-      <div className="flex flex-col justify-center border-r border-white/10 bg-black/22 px-3 py-4 sm:px-4">
-        <div className="text-[14px] font-semibold text-white">{title}</div>
-        <div className="mt-1 text-[12px] text-white/72">{subtitle}</div>
+    <div className="grid w-full grid-cols-[86px_minmax(0,1fr)_44px] border-t border-white/10 first:border-t-0 sm:grid-cols-[96px_minmax(0,1fr)_48px] md:grid-cols-[104px_minmax(0,1fr)_52px]">
+      <div className="flex min-w-0 flex-col justify-center border-r border-white/10 bg-black/22 px-2 py-3 sm:px-3 sm:py-4">
+        <div className="truncate text-[13px] font-semibold text-white sm:text-[14px]">{title}</div>
+        <div className="mt-1 truncate text-[11px] text-white/72 sm:text-[12px]">{subtitle}</div>
       </div>
 
       <div className="grid min-w-0 grid-rows-2">
@@ -97,9 +97,9 @@ function ScoreboardRow({
               onChange={(value) => onHoleChange(hole - 1, value)}
             />
           ))}
-          <div className="flex flex-col items-center justify-center border-l border-white/10 px-1.5 py-2 text-center">
+          <div className="flex flex-col items-center justify-center border-l border-white/10 px-1 py-1.5 text-center sm:px-1.5 sm:py-2">
             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">OUT</div>
-            <div className="mt-2 text-lg font-semibold text-white/90">
+            <div className="mt-2 text-base font-semibold text-white/90 sm:text-lg">
               <ScoreValue value={totals.out} />
             </div>
           </div>
@@ -114,18 +114,18 @@ function ScoreboardRow({
               onChange={(value) => onHoleChange(hole - 1, value)}
             />
           ))}
-          <div className="flex flex-col items-center justify-center border-l border-white/10 px-1.5 py-2 text-center">
+          <div className="flex flex-col items-center justify-center border-l border-white/10 px-1 py-1.5 text-center sm:px-1.5 sm:py-2">
             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">IN</div>
-            <div className="mt-2 text-lg font-semibold text-white/90">
+            <div className="mt-2 text-base font-semibold text-white/90 sm:text-lg">
               <ScoreValue value={totals.in} />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col items-center justify-center border-l border-white/10 bg-black/22 px-2 py-4 text-center">
+      <div className="flex flex-col items-center justify-center border-l border-white/10 bg-black/22 px-1 py-3 text-center sm:px-2 sm:py-4">
         <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">TOT</div>
-        <div className="mt-2 text-xl font-semibold text-white">
+        <div className="mt-2 text-lg font-semibold text-white sm:text-xl">
           <ScoreValue value={totals.total} />
         </div>
       </div>
@@ -426,11 +426,11 @@ export default function AdminPage() {
                 })}
               </div>
 
-              <div className="grid gap-6 xl:grid-cols-2">
+              <div className="grid gap-6 lg:grid-cols-2">
                 {activeSchedule.matches.map((match) => (
                   <section
                     key={`${activeSchedule.roundLabel}-${match.id}`}
-                    className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#07102a]/90 shadow-[0_18px_60px_-32px_rgba(0,0,0,0.9)] backdrop-blur xl:self-start"
+                    className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#07102a]/90 shadow-[0_18px_60px_-32px_rgba(0,0,0,0.9)] backdrop-blur lg:self-start"
                   >
                     <div className="flex flex-col gap-3 border-b border-white/10 px-4 py-4 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
                       <div>
@@ -451,7 +451,7 @@ export default function AdminPage() {
                       <Pill>Score</Pill>
                     </div>
 
-                    <div className="overflow-x-auto">
+                    <div>
                       <ScoreboardRow
                         title={getPlayerName(draftState.playerNames, match.left[0])}
                         subtitle={getPlayerName(draftState.playerNames, match.left[1])}
