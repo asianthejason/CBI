@@ -1,19 +1,23 @@
 "use client";
 
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import {
+  BACK_NINE,
+  FRONT_NINE,
   ROUND_LABELS,
-  ROUND_SCHEDULES,
+  getDefaultLeagueState,
+  getPairLabel,
+  getPlayerName,
+  getRoundSchedule,
+  getTeamPlayerLabels,
   TEAM_IDS,
   TEAM_SLOT_LABELS,
-  getDefaultLeagueState,
-  getPlayerName,
-  getTeamPlayerLabels,
   type LeagueState,
   type RoundLabel,
   type TeamId,
   useAdminAuth,
   useLeagueState,
+  calculateScoreTotals,
 } from "../lib/league-store";
 
 function Pill({ children }: { children: ReactNode }) {
@@ -33,6 +37,101 @@ function SectionTitle({ title, subtitle }: { title: string; subtitle?: string })
   );
 }
 
+function ScoreValue({ value }: { value: number | null }) {
+  return <span>{value ?? "—"}</span>;
+}
+
+function HoleInput({
+  hole,
+  value,
+  onChange,
+}: {
+  hole: number;
+  value: number | null;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col items-center gap-2 px-1.5 py-2 text-center">
+      <div className="text-[11px] font-semibold text-white/55">{hole}</div>
+      <input
+        type="number"
+        min="1"
+        inputMode="numeric"
+        value={value ?? ""}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-10 w-full min-w-0 rounded-lg border border-white/10 bg-black/25 px-1 text-center text-sm font-semibold text-white outline-none transition placeholder:text-white/20 focus:border-emerald-300/40"
+        placeholder="—"
+      />
+    </div>
+  );
+}
+
+function ScoreboardRow({
+  title,
+  subtitle,
+  scores,
+  onHoleChange,
+}: {
+  title: string;
+  subtitle: string;
+  scores: (number | null)[];
+  onHoleChange: (holeIndex: number, value: string) => void;
+}) {
+  const totals = calculateScoreTotals(scores);
+
+  return (
+    <div className="grid min-w-[1080px] grid-cols-[220px_minmax(0,1fr)_96px] border-t border-white/10 first:border-t-0 md:min-w-0">
+      <div className="flex flex-col justify-center border-r border-white/10 bg-black/22 px-6 py-5">
+        <div className="text-[15px] font-semibold text-white">{title}</div>
+        <div className="mt-1 text-[13px] text-white/72">{subtitle}</div>
+      </div>
+
+      <div className="grid min-w-0 grid-rows-2">
+        <div className="grid grid-cols-10 border-b border-white/10 bg-white/[0.03]">
+          {FRONT_NINE.map((hole) => (
+            <HoleInput
+              key={`${title}-front-${hole}`}
+              hole={hole}
+              value={scores[hole - 1] ?? null}
+              onChange={(value) => onHoleChange(hole - 1, value)}
+            />
+          ))}
+          <div className="flex flex-col items-center justify-center border-l border-white/10 px-1.5 py-2 text-center">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">OUT</div>
+            <div className="mt-2 text-lg font-semibold text-white/90">
+              <ScoreValue value={totals.out} />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-10 bg-white/[0.02]">
+          {BACK_NINE.map((hole) => (
+            <HoleInput
+              key={`${title}-back-${hole}`}
+              hole={hole}
+              value={scores[hole - 1] ?? null}
+              onChange={(value) => onHoleChange(hole - 1, value)}
+            />
+          ))}
+          <div className="flex flex-col items-center justify-center border-l border-white/10 px-1.5 py-2 text-center">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">IN</div>
+            <div className="mt-2 text-lg font-semibold text-white/90">
+              <ScoreValue value={totals.in} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col items-center justify-center border-l border-white/10 bg-black/22 px-3 py-4 text-center">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">TOT</div>
+        <div className="mt-3 text-2xl font-semibold text-white">
+          <ScoreValue value={totals.total} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const { state: liveState, configured, error: liveError, saveState, resetState } = useLeagueState();
   const { user, loading: authLoading, signIn, signOut } = useAdminAuth();
@@ -42,7 +141,8 @@ export default function AdminPage() {
   const [saveMessage, setSaveMessage] = useState("Live sync ready");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [authMessage, setAuthMessage] = useState("");
+  const [authMessage, setAuthMessage] = useState("Email/password sign-in ready");
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   useEffect(() => {
     if (!isDirty) {
@@ -64,7 +164,7 @@ export default function AdminPage() {
       } catch (error) {
         setSaveMessage(error instanceof Error ? error.message : "Save failed");
       }
-    }, 500);
+    }, 450);
 
     return () => window.clearTimeout(timer);
   }, [configured, draftState, isDirty, saveState, user]);
@@ -75,10 +175,7 @@ export default function AdminPage() {
     }
   }, [liveError]);
 
-  const activeSchedule = useMemo(
-    () => ROUND_SCHEDULES.find((round) => round.roundLabel === activeRound) ?? ROUND_SCHEDULES[0],
-    [activeRound],
-  );
+  const activeSchedule = useMemo(() => getRoundSchedule(activeRound), [activeRound]);
 
   const updatePlayerName = (label: string, value: string) => {
     setDraftState((current) => ({
@@ -92,22 +189,34 @@ export default function AdminPage() {
     setSaveMessage("Unsaved changes");
   };
 
-  const updateScore = (roundLabel: RoundLabel, matchId: number, side: "left" | "right", value: string) => {
-    const parsed = value === "" ? null : Number(value);
+  const updateHoleScore = (
+    roundLabel: RoundLabel,
+    matchId: number,
+    side: "left" | "right",
+    holeIndex: number,
+    value: string,
+  ) => {
+    const parsed = value.trim() === "" ? null : Number(value);
 
-    setDraftState((current) => ({
-      ...current,
-      matchScores: {
-        ...current.matchScores,
-        [roundLabel]: {
-          ...current.matchScores[roundLabel],
-          [matchId]: {
-            ...current.matchScores[roundLabel][matchId],
-            [side]: Number.isFinite(parsed) ? parsed : null,
+    setDraftState((current) => {
+      const nextScores = [...current.matchScores[roundLabel][matchId][side]];
+      nextScores[holeIndex] = Number.isFinite(parsed) ? parsed : null;
+
+      return {
+        ...current,
+        matchScores: {
+          ...current.matchScores,
+          [roundLabel]: {
+            ...current.matchScores[roundLabel],
+            [matchId]: {
+              ...current.matchScores[roundLabel][matchId],
+              [side]: nextScores,
+            },
           },
         },
-      },
-    }));
+      };
+    });
+
     setIsDirty(true);
     setSaveMessage("Unsaved changes");
   };
@@ -123,14 +232,24 @@ export default function AdminPage() {
     }
   };
 
-  const handleSignIn = async () => {
-    setAuthMessage("");
+  const handleSignIn = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!email.trim() || !password) {
+      setAuthMessage("Enter your admin email and password.");
+      return;
+    }
 
     try {
+      setIsSigningIn(true);
+      setAuthMessage("Signing in...");
       await signIn(email, password);
       setPassword("");
+      setAuthMessage("Signed in");
     } catch (error) {
-      setAuthMessage(error instanceof Error ? error.message : "Sign in failed");
+      setAuthMessage(error instanceof Error ? error.message : "Sign-in failed");
+    } finally {
+      setIsSigningIn(false);
     }
   };
 
@@ -149,13 +268,13 @@ export default function AdminPage() {
             <div className="max-w-2xl">
               <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">League Admin</h1>
               <p className="mt-3 text-sm text-white/65 sm:text-base">
-                Update team names and match scores here. Firestore pushes those changes live to the homepage.
+                Update team names and hole-by-hole match scores here. Firestore pushes those changes live to the site.
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
               <Pill>{saveMessage}</Pill>
-              {user ? <Pill>{user.email ?? "Signed in"}</Pill> : null}
+              <Pill>{user ? user.email ?? "Signed in" : authMessage}</Pill>
               {user ? (
                 <button
                   type="button"
@@ -171,7 +290,7 @@ export default function AdminPage() {
 
         {!configured ? (
           <section className="rounded-2xl border border-amber-300/20 bg-amber-300/10 p-5 text-sm text-amber-50 backdrop-blur">
-            Add your Firebase web app keys to <span className="font-semibold">.env.local</span> and Vercel env vars before using this page.
+            Add your Firebase web app keys to <span className="font-semibold">.env.local</span> locally and to Vercel project environment variables for the deployed site.
           </section>
         ) : authLoading ? (
           <section className="rounded-2xl border border-white/10 bg-white/5 p-5 text-sm text-white/75 backdrop-blur">
@@ -179,38 +298,39 @@ export default function AdminPage() {
           </section>
         ) : !user ? (
           <section className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur">
-            <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
+            <form className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end" onSubmit={handleSignIn}>
               <label className="block">
-                <div className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Email</div>
+                <div className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-white/55">Admin Email</div>
                 <input
+                  type="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
-                  type="email"
                   autoComplete="email"
                   className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-emerald-300/40"
-                  placeholder="admin@cbi.com"
+                  placeholder="you@example.com"
                 />
               </label>
+
               <label className="block">
-                <div className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Password</div>
+                <div className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-white/55">Password</div>
                 <input
+                  type="password"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  type="password"
                   autoComplete="current-password"
                   className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-emerald-300/40"
                   placeholder="Enter password"
                 />
               </label>
+
               <button
-                type="button"
-                onClick={() => void handleSignIn()}
-                className="rounded-full bg-emerald-400 px-5 py-3 text-sm font-semibold text-black shadow-[0_10px_30px_-18px_rgba(52,211,153,0.9)] transition hover:brightness-105"
+                type="submit"
+                disabled={isSigningIn}
+                className="rounded-full bg-emerald-400 px-5 py-3 text-sm font-semibold text-black shadow-[0_10px_30px_-18px_rgba(52,211,153,0.9)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                Sign In
+                {isSigningIn ? "Signing In..." : "Sign In"}
               </button>
-            </div>
-            {authMessage ? <p className="mt-3 text-sm text-rose-200">{authMessage}</p> : null}
+            </form>
           </section>
         ) : (
           <>
@@ -276,7 +396,10 @@ export default function AdminPage() {
             </section>
 
             <section className="flex flex-col gap-4">
-              <SectionTitle title="Match Scores" subtitle="Enter a total for each side in each match." />
+              <SectionTitle
+                title="Match Scores"
+                subtitle="Enter the stroke count for each hole. OUT, IN, and TOT are calculated automatically."
+              />
 
               <div className="flex flex-wrap items-center gap-2">
                 {ROUND_LABELS.map((round) => {
@@ -300,71 +423,50 @@ export default function AdminPage() {
                 })}
               </div>
 
-              <div className="grid gap-4 lg:grid-cols-2">
+              <div className="grid gap-6">
                 {activeSchedule.matches.map((match) => (
-                  <div
+                  <section
                     key={`${activeSchedule.roundLabel}-${match.id}`}
-                    className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur"
+                    className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#07102a]/90 shadow-[0_18px_60px_-32px_rgba(0,0,0,0.9)] backdrop-blur"
                   >
-                    <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                      <div className="h-full w-full bg-[radial-gradient(circle_at_20%_0%,rgba(34,197,94,0.18),transparent_50%),radial-gradient(circle_at_90%_100%,rgba(16,185,129,0.14),transparent_55%)]" />
+                    <div className="flex flex-col gap-4 border-b border-white/10 px-5 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <h3 className="text-2xl font-semibold tracking-tight text-white">
+                          {activeSchedule.roundLabel} — Match {match.id}
+                        </h3>
+                        <div className="mt-3 flex flex-wrap items-center gap-3 text-white/80">
+                          <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium">
+                            {getPairLabel(match.left)}
+                          </span>
+                          <span className="text-lg text-white/45">vs</span>
+                          <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium">
+                            {getPairLabel(match.right)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <Pill>Score</Pill>
                     </div>
 
-                    <div className="relative flex flex-col gap-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <div className="text-sm font-semibold text-white">Match {match.id}</div>
-                          <div className="mt-1 text-xs uppercase tracking-[0.18em] text-white/45">
-                            {activeSchedule.roundLabel}
-                          </div>
-                        </div>
-                        <Pill>Live scoring</Pill>
-                      </div>
-
-                      <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
-                        <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-                          <div className="text-xs uppercase tracking-[0.18em] text-white/45">Left Side</div>
-                          <div className="mt-2 text-sm font-semibold text-white">
-                            {getPlayerName(draftState.playerNames, match.left[0])} / {getPlayerName(draftState.playerNames, match.left[1])}
-                          </div>
-                        </div>
-
-                        <div className="text-center text-xs font-semibold uppercase tracking-[0.22em] text-white/40">
-                          vs
-                        </div>
-
-                        <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-                          <div className="text-xs uppercase tracking-[0.18em] text-white/45">Right Side</div>
-                          <div className="mt-2 text-sm font-semibold text-white">
-                            {getPlayerName(draftState.playerNames, match.right[0])} / {getPlayerName(draftState.playerNames, match.right[1])}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <label className="block">
-                          <div className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Left Score</div>
-                          <input
-                            value={draftState.matchScores[activeSchedule.roundLabel][match.id]?.left ?? ""}
-                            onChange={(event) => updateScore(activeSchedule.roundLabel, match.id, "left", event.target.value)}
-                            inputMode="numeric"
-                            className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-emerald-300/40"
-                            placeholder="Enter score"
-                          />
-                        </label>
-                        <label className="block">
-                          <div className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Right Score</div>
-                          <input
-                            value={draftState.matchScores[activeSchedule.roundLabel][match.id]?.right ?? ""}
-                            onChange={(event) => updateScore(activeSchedule.roundLabel, match.id, "right", event.target.value)}
-                            inputMode="numeric"
-                            className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-emerald-300/40"
-                            placeholder="Enter score"
-                          />
-                        </label>
-                      </div>
+                    <div className="overflow-x-auto">
+                      <ScoreboardRow
+                        title={getPlayerName(draftState.playerNames, match.left[0])}
+                        subtitle={getPlayerName(draftState.playerNames, match.left[1])}
+                        scores={draftState.matchScores[activeSchedule.roundLabel][match.id].left}
+                        onHoleChange={(holeIndex, value) =>
+                          updateHoleScore(activeSchedule.roundLabel, match.id, "left", holeIndex, value)
+                        }
+                      />
+                      <ScoreboardRow
+                        title={getPlayerName(draftState.playerNames, match.right[0])}
+                        subtitle={getPlayerName(draftState.playerNames, match.right[1])}
+                        scores={draftState.matchScores[activeSchedule.roundLabel][match.id].right}
+                        onHoleChange={(holeIndex, value) =>
+                          updateHoleScore(activeSchedule.roundLabel, match.id, "right", holeIndex, value)
+                        }
+                      />
                     </div>
-                  </div>
+                  </section>
                 ))}
               </div>
             </section>
