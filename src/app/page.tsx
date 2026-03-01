@@ -160,43 +160,25 @@ function TeamTable({ team }: { team: "A" | "B" | "C" | "D" }) {
   );
 }
 
-function MatchupsRoundCard({ round }: { round: RoundSchedule }) {
+function MatchupCard({ match }: { match: RoundSchedule["matches"][number] }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur">
-      <div className="absolute -right-24 -top-24 h-56 w-56 rounded-full bg-emerald-400/15 blur-3xl" />
-      <div className="absolute -left-24 -bottom-24 h-56 w-56 rounded-full bg-lime-300/10 blur-3xl" />
+    <div className="relative min-w-[280px] overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur">
+      <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-emerald-400/15 blur-3xl" />
+      <div className="absolute -left-16 -bottom-16 h-36 w-36 rounded-full bg-lime-300/10 blur-3xl" />
 
-      <div className="relative flex items-start justify-between gap-4">
-        <div>
-          <div className="text-base font-semibold text-white">{round.roundLabel}</div>
-          <div className="mt-1 text-xs text-white/65">Matches</div>
-        </div>
-        <Pill>8 groups</Pill>
+      <div className="relative mb-3 flex items-center gap-2">
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-xs font-semibold text-white/85">
+          {match.id}
+        </span>
+        <span className="text-sm font-semibold text-white/90">Match {match.id}</span>
       </div>
 
-      <div className="relative mt-4 rounded-xl border border-white/10 bg-black/20 p-3">
-        <div className="mb-3 text-xs font-semibold tracking-wide text-white/70">
-          Matches
+      <div className="relative flex min-w-0 flex-col gap-3">
+        <PairStack pair={match.left} />
+        <div className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
+          vs
         </div>
-        <ol className="flex flex-col gap-3">
-          {round.matches.map((m) => (
-            <li key={m.id} className="rounded-xl border border-white/8 bg-white/[0.03] p-3">
-              <div className="mb-3 flex items-center gap-2">
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-white/10 text-xs font-semibold text-white/85">
-                  {m.id}
-                </span>
-                <span className="text-sm font-semibold text-white/90">Match {m.id}</span>
-              </div>
-              <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center">
-                <PairStack pair={m.left} />
-                <div className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
-                  vs
-                </div>
-                <PairStack pair={m.right} />
-              </div>
-            </li>
-          ))}
-        </ol>
+        <PairStack pair={match.right} />
       </div>
     </div>
   );
@@ -341,6 +323,9 @@ export default function Home() {
   // Leaving off the trailing "Z" keeps it in the viewer's local timezone.
   const draftDate = useMemo(() => new Date("2026-07-09T20:00:00"), []);
   const cd = useCountdown(draftDate);
+  const [activeMatchupRound, setActiveMatchupRound] = useState<"Round 1" | "Round 2" | "Round 3">(
+    "Round 1",
+  );
   const [activeRound, setActiveRound] = useState<"Round 1" | "Round 2" | "Round 3">(
     "Round 1",
   );
@@ -432,6 +417,8 @@ export default function Home() {
     [],
   );
 
+  const activeMatchupSchedule =
+    rounds.find((r) => r.roundLabel === activeMatchupRound) ?? rounds[0];
   const activeSchedule = rounds.find((r) => r.roundLabel === activeRound) ?? rounds[0];
 
   return (
@@ -515,12 +502,50 @@ export default function Home() {
         <section className="flex flex-col gap-4">
           <SectionTitle
             title="Matchups"
-            subtitle="Showing matches only so the layout stays cleaner and player labels + names have enough room."
+            subtitle="Use the round tabs to switch views. Each tab shows that round’s 4 matches in a single horizontal row on desktop."
           />
-          <div className="grid gap-4 lg:grid-cols-3">
-            {rounds.map((r) => (
-              <MatchupsRoundCard key={r.roundLabel} round={r} />
-            ))}
+
+          <div className="flex flex-wrap items-center gap-2">
+            {(["Round 1", "Round 2", "Round 3"] as const).map((r) => {
+              const active = r === activeMatchupRound;
+              return (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setActiveMatchupRound(r)}
+                  className={
+                    "rounded-full px-4 py-2 text-sm font-semibold transition-all " +
+                    (active
+                      ? "bg-emerald-400 text-black shadow-[0_10px_30px_-18px_rgba(52,211,153,0.9)]"
+                      : "border border-white/10 bg-white/5 text-white/80 hover:bg-white/8")
+                  }
+                  aria-pressed={active}
+                >
+                  {r}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 shadow-[0_18px_60px_-32px_rgba(0,0,0,0.9)] backdrop-blur sm:p-5">
+            <div className="absolute -right-24 -top-24 h-56 w-56 rounded-full bg-emerald-400/15 blur-3xl" />
+            <div className="absolute -left-24 -bottom-24 h-56 w-56 rounded-full bg-lime-300/10 blur-3xl" />
+
+            <div className="relative flex items-start justify-between gap-4">
+              <div>
+                <div className="text-base font-semibold text-white">{activeMatchupSchedule.roundLabel}</div>
+                <div className="mt-1 text-xs text-white/65">4 matches</div>
+              </div>
+              <Pill>Matches</Pill>
+            </div>
+
+            <div className="relative mt-4 overflow-x-auto pb-1">
+              <div className="grid min-w-[1180px] grid-cols-4 gap-4">
+                {activeMatchupSchedule.matches.map((match) => (
+                  <MatchupCard key={`${activeMatchupSchedule.roundLabel}-${match.id}`} match={match} />
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
