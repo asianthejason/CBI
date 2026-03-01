@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 
 type Pair = [string, string];
 
@@ -29,16 +29,16 @@ function getPlayerName(label: string) {
 
 function PlayerBadge({ label }: { label: string }) {
   return (
-    <div className="inline-flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/90 shadow-sm">
-      <span className="font-semibold text-emerald-200">{label}</span>
-      <span className="truncate text-white/70">{getPlayerName(label)}</span>
+    <div className="flex w-full min-w-0 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/90 shadow-sm">
+      <span className="shrink-0 font-semibold text-emerald-200">{label}</span>
+      <span className="min-w-0 truncate text-white/70">{getPlayerName(label)}</span>
     </div>
   );
 }
 
 function PairStack({ pair }: { pair: Pair }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
+    <div className="min-w-0">
       <div className="flex flex-col gap-2">
         <PlayerBadge label={pair[0]} />
         <PlayerBadge label={pair[1]} />
@@ -81,7 +81,7 @@ function useCountdown(target: Date) {
   }, [now, target]);
 }
 
-function Pill({ children }: { children: React.ReactNode }) {
+function Pill({ children }: { children: ReactNode }) {
   return (
     <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-white/90 shadow-sm">
       {children}
@@ -169,65 +169,44 @@ function MatchupsRoundCard({ round }: { round: RoundSchedule }) {
       <div className="relative flex items-start justify-between gap-4">
         <div>
           <div className="text-base font-semibold text-white">{round.roundLabel}</div>
-          <div className="mt-1 text-xs text-white/65">Pairings + matches</div>
+          <div className="mt-1 text-xs text-white/65">Matches</div>
         </div>
         <Pill>8 groups</Pill>
       </div>
 
-      <div className="relative mt-4 flex flex-col gap-4">
-        <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-          <div className="mb-3 text-xs font-semibold tracking-wide text-white/70">
-            Team pairings
-          </div>
-          <div className="flex flex-col gap-3">
-            {(
-              ["A", "B", "C", "D"] as const
-            ).map((t) => (
-              <div key={t} className="rounded-xl border border-white/8 bg-white/[0.03] p-3">
-                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-white/70">
-                  Team {t}
-                </div>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {round.teamPairs[t].map((p) => (
-                    <PairStack key={`${t}-${p[0]}-${p[1]}`} pair={p} />
-                  ))}
-                </div>
+      <div className="relative mt-4 rounded-xl border border-white/10 bg-black/20 p-3">
+        <div className="mb-3 text-xs font-semibold tracking-wide text-white/70">
+          Matches
+        </div>
+        <ol className="flex flex-col gap-3">
+          {round.matches.map((m) => (
+            <li key={m.id} className="rounded-xl border border-white/8 bg-white/[0.03] p-3">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-white/10 text-xs font-semibold text-white/85">
+                  {m.id}
+                </span>
+                <span className="text-sm font-semibold text-white/90">Match {m.id}</span>
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-          <div className="mb-3 text-xs font-semibold tracking-wide text-white/70">
-            Matches
-          </div>
-          <ol className="flex flex-col gap-3">
-            {round.matches.map((m) => (
-              <li key={m.id} className="rounded-xl border border-white/8 bg-white/[0.03] p-3">
-                <div className="mb-3 flex items-center gap-2">
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-white/10 text-xs font-semibold text-white/85">
-                    {m.id}
-                  </span>
-                  <span className="text-sm font-semibold text-white/90">Match {m.id}</span>
+              <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center">
+                <PairStack pair={m.left} />
+                <div className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
+                  vs
                 </div>
-                <div className="grid gap-3 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
-                  <PairStack pair={m.left} />
-                  <div className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
-                    vs
-                  </div>
-                  <PairStack pair={m.right} />
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
+                <PairStack pair={m.right} />
+              </div>
+            </li>
+          ))}
+        </ol>
       </div>
     </div>
   );
 }
 
 function Scorecard({ title, left, right }: { title: string; left: Pair; right: Pair }) {
-  const holes = Array.from({ length: 9 }, (_, i) => i + 1);
+  const frontNine = Array.from({ length: 9 }, (_, i) => i + 1);
+  const backNine = Array.from({ length: 9 }, (_, i) => i + 10);
+  const rowLabels = [`(${left[0]}–${left[1]})`, `(${right[0]}–${right[1]})`];
+
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur">
       <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
@@ -251,44 +230,89 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
           <Pill>Score</Pill>
         </div>
 
-        <div className="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-black/20">
-          <table className="min-w-[520px] w-full table-fixed">
-            <thead>
-              <tr className="bg-white/[0.06]">
-                <th className="w-28 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-white/70">
-                  Hole
-                </th>
-                {holes.map((h) => (
-                  <th
-                    key={h}
-                    className="px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-white/70"
-                  >
-                    {h}
+        <div className="mt-4 flex flex-col gap-3">
+          <div className="overflow-hidden rounded-xl border border-white/10 bg-black/20">
+            <table className="w-full table-fixed">
+              <thead>
+                <tr className="bg-white/[0.06]">
+                  <th className="w-20 px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:w-24 sm:px-3 sm:text-[11px]">
+                    Team
                   </th>
-                ))}
-                <th className="w-14 px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-white/70">
-                  TOT
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {[`(${left[0]}–${left[1]})`, `(${right[0]}–${right[1]})`].map((rowLabel) => (
-                <tr key={rowLabel} className="border-t border-white/10">
-                  <td className="px-3 py-2 text-xs font-semibold text-white/80">
-                    {rowLabel}
-                  </td>
-                  {holes.map((h) => (
-                    <td key={h} className="px-2 py-2 text-center text-sm text-white/35">
-                      —
-                    </td>
+                  {frontNine.map((col) => (
+                    <th
+                      key={col}
+                      className="px-0.5 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:px-1 sm:text-[11px]"
+                    >
+                      {col}
+                    </th>
                   ))}
-                  <td className="px-2 py-2 text-center text-sm font-semibold text-white/35">
-                    —
-                  </td>
+                  <th className="px-0.5 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:px-1 sm:text-[11px]">
+                    Out
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rowLabels.map((rowLabel) => (
+                  <tr key={`front-${rowLabel}`} className="border-t border-white/10">
+                    <td className="px-2 py-2 text-[11px] font-semibold text-white/80 sm:px-3 sm:text-xs">
+                      {rowLabel}
+                    </td>
+                    {[...frontNine, 'OUT'].map((col) => (
+                      <td
+                        key={col}
+                        className="px-0.5 py-2 text-center text-[11px] font-semibold text-white/35 sm:px-1 sm:text-sm"
+                      >
+                        —
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="overflow-hidden rounded-xl border border-white/10 bg-black/20">
+            <table className="w-full table-fixed">
+              <thead>
+                <tr className="bg-white/[0.06]">
+                  <th className="w-20 px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:w-24 sm:px-3 sm:text-[11px]">
+                    Team
+                  </th>
+                  {backNine.map((col) => (
+                    <th
+                      key={col}
+                      className="px-0.5 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:px-1 sm:text-[11px]"
+                    >
+                      {col}
+                    </th>
+                  ))}
+                  <th className="px-0.5 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:px-1 sm:text-[11px]">
+                    In
+                  </th>
+                  <th className="px-0.5 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:px-1 sm:text-[11px]">
+                    Tot
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {rowLabels.map((rowLabel) => (
+                  <tr key={`back-${rowLabel}`} className="border-t border-white/10">
+                    <td className="px-2 py-2 text-[11px] font-semibold text-white/80 sm:px-3 sm:text-xs">
+                      {rowLabel}
+                    </td>
+                    {[...backNine, 'IN', 'TOT'].map((col) => (
+                      <td
+                        key={col}
+                        className="px-0.5 py-2 text-center text-[11px] font-semibold text-white/35 sm:px-1 sm:text-sm"
+                      >
+                        —
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div className="mt-3 flex items-center justify-between gap-3 text-xs text-white/55">
@@ -296,7 +320,7 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/80" />
             Admin page coming soon for scores
           </span>
-          <span className="hidden sm:inline">Swipe to view all holes →</span>
+          <span className="hidden sm:inline">Front 9 and back 9 are split for easier mobile reading</span>
         </div>
       </div>
     </div>
@@ -482,7 +506,7 @@ export default function Home() {
         <section className="flex flex-col gap-4">
           <SectionTitle
             title="Matchups"
-            subtitle="Pairings and matches are stacked for more room so player labels and names stay easy to read."
+            subtitle="Showing matches only so the layout stays cleaner and player labels + names have enough room."
           />
           <div className="grid gap-4 lg:grid-cols-3">
             {rounds.map((r) => (
@@ -495,7 +519,7 @@ export default function Home() {
         <section className="flex flex-col gap-4">
           <SectionTitle
             title="Scorecards"
-            subtitle="3 tabs (Round 1–3). Each tab shows 4 match scorecards."
+            subtitle="Each round shows 4 half-width scorecards with front 9 on the first row and back 9 underneath for easier mobile viewing."
           />
 
           <div className="flex flex-wrap items-center gap-2">
