@@ -1,15 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  GoogleAuthProvider,
-  onAuthStateChanged,
-  signInWithPopup,
-  signOut,
-  type User,
-} from "firebase/auth";
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User } from "firebase/auth";
 import { doc, onSnapshot, setDoc } from "firebase/firestore";
-import { auth, db, googleProvider, isFirebaseConfigured } from "./firebase";
+import { auth, db, isFirebaseConfigured } from "./firebase";
 
 export type TeamId = "A" | "B" | "C" | "D";
 export type RoundLabel = "Round 1" | "Round 2" | "Round 3";
@@ -310,12 +304,12 @@ export function useAdminAuth() {
     });
   }, []);
 
-  const signIn = useCallback(async () => {
-    if (!auth || !googleProvider) {
+  const signIn = useCallback(async (email: string, password: string) => {
+    if (!auth) {
       throw new Error("Firebase Auth is not configured.");
     }
 
-    await signInWithPopup(auth, googleProvider as GoogleAuthProvider);
+    await signInWithEmailAndPassword(auth, email.trim(), password);
   }, []);
 
   const signOutUser = useCallback(async () => {

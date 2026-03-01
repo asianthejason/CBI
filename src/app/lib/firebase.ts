@@ -1,7 +1,7 @@
 "use client";
 
 import { getApp, getApps, initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -25,8 +25,3 @@ export const firebaseApp = isFirebaseConfigured()
 
 export const db = firebaseApp ? getFirestore(firebaseApp) : null;
 export const auth = firebaseApp ? getAuth(firebaseApp) : null;
-export const googleProvider = firebaseApp ? new GoogleAuthProvider() : null;
-
-if (googleProvider) {
-  googleProvider.setCustomParameters({ prompt: "select_account" });
-}
