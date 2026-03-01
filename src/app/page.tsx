@@ -199,46 +199,47 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
     players: [string, string];
     showTopBorder?: boolean;
   }) => (
-    <div className={"grid min-w-[760px] grid-cols-[160px_minmax(0,1fr)_84px] overflow-hidden " + (showTopBorder ? "border-t border-white/10" : "")}>
-      <div className="row-span-2 flex min-h-[106px] flex-col justify-center border-r border-white/10 px-3 py-3 text-[11px] font-semibold text-white/85 sm:px-4 sm:text-xs">
+    <div
+      className={
+        "grid grid-cols-[110px_repeat(10,minmax(0,1fr))_56px] overflow-hidden sm:grid-cols-[130px_repeat(10,minmax(0,1fr))_62px] " +
+        (showTopBorder ? "border-t border-white/10" : "")
+      }
+    >
+      <div className="row-span-2 flex min-h-[96px] flex-col justify-center border-r border-white/10 px-2 py-3 text-[11px] font-semibold leading-5 text-white/85 sm:px-3 sm:text-xs">
         <span className="truncate">{players[0]}</span>
-        <span className="mt-1 truncate text-white/65">{players[1]}</span>
+        <span className="truncate text-white/65">{players[1]}</span>
       </div>
 
-      <div className="grid grid-cols-10 border-b border-white/10 bg-white/[0.05]">
-        {[...frontNine, "OUT"].map((hole) => (
-          <div
-            key={`front-label-${players[0]}-${hole}`}
-            className="flex h-[52px] flex-col items-center justify-center px-0.5 text-center"
-          >
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:text-[11px]">
-              {hole}
-            </span>
-            <span className="mt-1 text-sm font-semibold text-white/35">—</span>
-          </div>
-        ))}
-      </div>
+      {[...frontNine, "OUT"].map((hole) => (
+        <div
+          key={`front-label-${players[0]}-${hole}`}
+          className="flex h-[48px] min-w-0 flex-col items-center justify-center border-b border-white/10 bg-white/[0.05] px-0 text-center"
+        >
+          <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
+            {hole}
+          </span>
+          <span className="mt-1 text-sm font-semibold leading-none text-white/35">—</span>
+        </div>
+      ))}
 
-      <div className="row-span-2 flex min-h-[106px] flex-col items-center justify-center border-l border-white/10 px-2 text-center">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/60 sm:text-[11px]">
+      <div className="row-span-2 flex min-h-[96px] flex-col items-center justify-center border-l border-white/10 px-1 text-center">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60 sm:text-[11px]">
           Tot
         </span>
-        <span className="mt-2 text-lg font-semibold text-white/35">—</span>
+        <span className="mt-2 text-base font-semibold text-white/35 sm:text-lg">—</span>
       </div>
 
-      <div className="grid grid-cols-10">
-        {[...backNine, "IN"].map((hole) => (
-          <div
-            key={`back-label-${players[0]}-${hole}`}
-            className="flex h-[52px] flex-col items-center justify-center px-0.5 text-center"
-          >
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:text-[11px]">
-              {hole}
-            </span>
-            <span className="mt-1 text-sm font-semibold text-white/35">—</span>
-          </div>
-        ))}
-      </div>
+      {[...backNine, "IN"].map((hole) => (
+        <div
+          key={`back-label-${players[0]}-${hole}`}
+          className="flex h-[48px] min-w-0 flex-col items-center justify-center px-0 text-center"
+        >
+          <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
+            {hole}
+          </span>
+          <span className="mt-1 text-sm font-semibold leading-none text-white/35">—</span>
+        </div>
+      ))}
     </div>
   );
 
@@ -265,7 +266,7 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
           <Pill>Score</Pill>
         </div>
 
-        <div className="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-black/20">
+        <div className="mt-4 rounded-xl border border-white/10 bg-black/20">
           <ScoreStrip players={rowTeams[0] as [string, string]} />
           <ScoreStrip players={rowTeams[1] as [string, string]} showTopBorder />
         </div>
