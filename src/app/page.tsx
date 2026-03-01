@@ -121,10 +121,9 @@ function TeamTable({ team }: { team: "A" | "B" | "C" | "D" }) {
           </div>
           <div>
             <div className="text-sm font-semibold text-white">Team {team}</div>
-            <div className="text-xs text-white/65">Roster (placeholder)</div>
+
           </div>
         </div>
-        <Pill>2026</Pill>
       </div>
 
       <div className="relative px-4 pb-4 pt-3">
@@ -271,13 +270,6 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
           <ScoreStrip players={rowTeams[1] as [string, string]} showTopBorder />
         </div>
 
-        <div className="mt-3 flex items-center justify-between gap-3 text-xs text-white/55">
-          <span className="inline-flex items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/80" />
-            Admin page coming soon for scores
-          </span>
-          <span className="hidden sm:inline">Front 9 + back 9 now mirror the live scorecard layout</span>
-        </div>
       </div>
     </div>
   );
@@ -403,15 +395,11 @@ export default function Home() {
             <div className="max-w-xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs font-semibold text-white/80">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                2026 Season
               </div>
               <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-                Cockboys Invitational — Season Hub
+                Cockboys Invitational 2026
               </h1>
-              <p className="mt-3 text-sm leading-6 text-white/70 sm:text-base">
-                Draft countdown, team rosters, matchups, and scorecards — all in one clean,
-                golf-themed home page.
-              </p>
+
             </div>
 
             <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-black/20 p-4 sm:p-5">
@@ -419,10 +407,9 @@ export default function Home() {
                 <div>
                   <div className="text-sm font-semibold text-white">Countdown to Draft</div>
                   <div className="mt-1 text-xs text-white/60">
-                    Target: {draftDate.toLocaleString()}
+                    {draftDate.toLocaleString()}
                   </div>
                 </div>
-                {cd.done ? <Pill>It’s draft time 🏌️</Pill> : <Pill>Lock in</Pill>}
               </div>
 
               <div className="mt-4 grid grid-cols-4 gap-2 sm:gap-3">
@@ -453,8 +440,7 @@ export default function Home() {
         <section className="flex flex-col gap-4">
           <SectionTitle
             title="Teams"
-            subtitle="Four tables side-by-side (mobile-friendly). Names + scores will be editable later on the admin page."
-          />
+            />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <TeamTable team="A" />
             <TeamTable team="B" />
@@ -467,8 +453,7 @@ export default function Home() {
         <section className="flex flex-col gap-4">
           <SectionTitle
             title="Matchups"
-            subtitle="Use the round tabs to switch views. Each tab shows that round’s 4 matches in a single horizontal row on desktop."
-          />
+            />
 
           <div className="flex flex-wrap items-center gap-2">
             {(["Round 1", "Round 2", "Round 3"] as const).map((r) => {
@@ -499,7 +484,7 @@ export default function Home() {
             <div className="relative flex items-start justify-between gap-4">
               <div>
                 <div className="text-base font-semibold text-white">{activeMatchupSchedule.roundLabel}</div>
-                <div className="mt-1 text-xs text-white/65">4 matches</div>
+
               </div>
               <Pill>Matches</Pill>
             </div>
@@ -518,8 +503,7 @@ export default function Home() {
         <section className="flex flex-col gap-4">
           <SectionTitle
             title="Scorecards"
-            subtitle="Each round shows 4 half-width scorecards with front 9 on the first row and back 9 underneath for easier mobile viewing."
-          />
+/>
 
           <div className="flex flex-wrap items-center gap-2">
             {(
@@ -557,9 +541,6 @@ export default function Home() {
           </div>
         </section>
 
-        <footer className="pb-2 pt-6 text-center text-xs text-white/50">
-          Built for the 2026 season — admin + scoring tools coming next.
-        </footer>
       </main>
     </div>
   );
