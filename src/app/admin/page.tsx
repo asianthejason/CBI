@@ -18,7 +18,7 @@ import {
   useAdminAuth,
   useLeagueState,
   calculateScoreTotals,
-} from "../lib/league-store";
+} from "../league-store";
 
 function Pill({ children }: { children: ReactNode }) {
   return (
