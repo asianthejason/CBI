@@ -205,7 +205,10 @@ function MatchupsRoundCard({ round }: { round: RoundSchedule }) {
 function Scorecard({ title, left, right }: { title: string; left: Pair; right: Pair }) {
   const frontNine = Array.from({ length: 9 }, (_, i) => i + 1);
   const backNine = Array.from({ length: 9 }, (_, i) => i + 10);
-  const rowLabels = [`(${left[0]}–${left[1]})`, `(${right[0]}–${right[1]})`];
+  const rowLabels = [
+    `${getPlayerName(left[0])} / ${getPlayerName(left[1])}`,
+    `${getPlayerName(right[0])} / ${getPlayerName(right[1])}`,
+  ];
 
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur">
@@ -235,7 +238,7 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
             <table className="w-full table-fixed">
               <thead>
                 <tr className="bg-white/[0.06]">
-                  <th className="w-20 px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:w-24 sm:px-3 sm:text-[11px]">
+                  <th className="w-32 px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:w-40 sm:px-3 sm:text-[11px] lg:w-44">
                     Team
                   </th>
                   {frontNine.map((col) => (
@@ -254,7 +257,7 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
               <tbody>
                 {rowLabels.map((rowLabel) => (
                   <tr key={`front-${rowLabel}`} className="border-t border-white/10">
-                    <td className="px-2 py-2 text-[11px] font-semibold text-white/80 sm:px-3 sm:text-xs">
+                    <td className="truncate px-2 py-2 text-[11px] font-semibold text-white/80 sm:px-3 sm:text-xs">
                       {rowLabel}
                     </td>
                     {[...frontNine, 'OUT'].map((col) => (
@@ -275,7 +278,7 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
             <table className="w-full table-fixed">
               <thead>
                 <tr className="bg-white/[0.06]">
-                  <th className="w-20 px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:w-24 sm:px-3 sm:text-[11px]">
+                  <th className="w-32 px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:w-40 sm:px-3 sm:text-[11px] lg:w-44">
                     Team
                   </th>
                   {backNine.map((col) => (
@@ -297,7 +300,7 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
               <tbody>
                 {rowLabels.map((rowLabel) => (
                   <tr key={`back-${rowLabel}`} className="border-t border-white/10">
-                    <td className="px-2 py-2 text-[11px] font-semibold text-white/80 sm:px-3 sm:text-xs">
+                    <td className="truncate px-2 py-2 text-[11px] font-semibold text-white/80 sm:px-3 sm:text-xs">
                       {rowLabel}
                     </td>
                     {[...backNine, 'IN', 'TOT'].map((col) => (
