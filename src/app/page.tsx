@@ -192,6 +192,56 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
     [getPlayerName(right[0]), getPlayerName(right[1])],
   ];
 
+  const ScoreStrip = ({
+    players,
+    showTopBorder,
+  }: {
+    players: [string, string];
+    showTopBorder?: boolean;
+  }) => (
+    <div className={"grid min-w-[760px] grid-cols-[160px_minmax(0,1fr)_84px] overflow-hidden " + (showTopBorder ? "border-t border-white/10" : "")}>
+      <div className="row-span-2 flex min-h-[106px] flex-col justify-center border-r border-white/10 px-3 py-3 text-[11px] font-semibold text-white/85 sm:px-4 sm:text-xs">
+        <span className="truncate">{players[0]}</span>
+        <span className="mt-1 truncate text-white/65">{players[1]}</span>
+      </div>
+
+      <div className="grid grid-cols-10 border-b border-white/10 bg-white/[0.05]">
+        {[...frontNine, "OUT"].map((hole) => (
+          <div
+            key={`front-label-${players[0]}-${hole}`}
+            className="flex h-[52px] flex-col items-center justify-center px-0.5 text-center"
+          >
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:text-[11px]">
+              {hole}
+            </span>
+            <span className="mt-1 text-sm font-semibold text-white/35">—</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="row-span-2 flex min-h-[106px] flex-col items-center justify-center border-l border-white/10 px-2 text-center">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/60 sm:text-[11px]">
+          Tot
+        </span>
+        <span className="mt-2 text-lg font-semibold text-white/35">—</span>
+      </div>
+
+      <div className="grid grid-cols-10">
+        {[...backNine, "IN"].map((hole) => (
+          <div
+            key={`back-label-${players[0]}-${hole}`}
+            className="flex h-[52px] flex-col items-center justify-center px-0.5 text-center"
+          >
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:text-[11px]">
+              {hole}
+            </span>
+            <span className="mt-1 text-sm font-semibold text-white/35">—</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur">
       <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
@@ -215,95 +265,9 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
           <Pill>Score</Pill>
         </div>
 
-        <div className="mt-4 flex flex-col gap-3">
-          <div className="overflow-hidden rounded-xl border border-white/10 bg-black/20">
-            <table className="w-full table-fixed">
-              <thead>
-                <tr className="bg-white/[0.06]">
-                  <th className="w-32 px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:w-40 sm:px-3 sm:text-[11px] lg:w-44">
-                    Team
-                  </th>
-                  {frontNine.map((col) => (
-                    <th
-                      key={col}
-                      className="px-0.5 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:px-1 sm:text-[11px]"
-                    >
-                      {col}
-                    </th>
-                  ))}
-                  <th className="px-0.5 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:px-1 sm:text-[11px]">
-                    Out
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {rowTeams.map((players, index) => (
-                  <tr key={`front-${index}`} className="border-t border-white/10 align-top">
-                    <td className="px-2 py-2 text-[11px] font-semibold text-white/80 sm:px-3 sm:text-xs">
-                      <div className="flex min-w-0 flex-col leading-tight">
-                        <span className="truncate">{players[0]}</span>
-                        <span className="truncate text-white/65">{players[1]}</span>
-                      </div>
-                    </td>
-                    {[...frontNine, 'OUT'].map((col) => (
-                      <td
-                        key={col}
-                        className="px-0.5 py-2 text-center text-[11px] font-semibold text-white/35 sm:px-1 sm:text-sm"
-                      >
-                        —
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="overflow-hidden rounded-xl border border-white/10 bg-black/20">
-            <table className="w-full table-fixed">
-              <thead>
-                <tr className="bg-white/[0.06]">
-                  <th className="w-32 px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:w-40 sm:px-3 sm:text-[11px] lg:w-44">
-                    Team
-                  </th>
-                  {backNine.map((col) => (
-                    <th
-                      key={col}
-                      className="px-0.5 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:px-1 sm:text-[11px]"
-                    >
-                      {col}
-                    </th>
-                  ))}
-                  <th className="px-0.5 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:px-1 sm:text-[11px]">
-                    In
-                  </th>
-                  <th className="px-0.5 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:px-1 sm:text-[11px]">
-                    Tot
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {rowTeams.map((players, index) => (
-                  <tr key={`back-${index}`} className="border-t border-white/10 align-top">
-                    <td className="px-2 py-2 text-[11px] font-semibold text-white/80 sm:px-3 sm:text-xs">
-                      <div className="flex min-w-0 flex-col leading-tight">
-                        <span className="truncate">{players[0]}</span>
-                        <span className="truncate text-white/65">{players[1]}</span>
-                      </div>
-                    </td>
-                    {[...backNine, 'IN', 'TOT'].map((col) => (
-                      <td
-                        key={col}
-                        className="px-0.5 py-2 text-center text-[11px] font-semibold text-white/35 sm:px-1 sm:text-sm"
-                      >
-                        —
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div className="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-black/20">
+          <ScoreStrip players={rowTeams[0] as [string, string]} />
+          <ScoreStrip players={rowTeams[1] as [string, string]} showTopBorder />
         </div>
 
         <div className="mt-3 flex items-center justify-between gap-3 text-xs text-white/55">
@@ -311,7 +275,7 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/80" />
             Admin page coming soon for scores
           </span>
-          <span className="hidden sm:inline">Front 9 and back 9 are split for easier mobile reading</span>
+          <span className="hidden sm:inline">Front 9 + back 9 now mirror the live scorecard layout</span>
         </div>
       </div>
     </div>
