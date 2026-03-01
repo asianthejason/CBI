@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Pair = [string, string];
 
@@ -81,7 +81,7 @@ function useCountdown(target: Date) {
   }, [now, target]);
 }
 
-function Pill({ children }: { children: ReactNode }) {
+function Pill({ children }: { children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-white/90 shadow-sm">
       {children}
@@ -205,7 +205,10 @@ function MatchupsRoundCard({ round }: { round: RoundSchedule }) {
 function Scorecard({ title, left, right }: { title: string; left: Pair; right: Pair }) {
   const frontNine = Array.from({ length: 9 }, (_, i) => i + 1);
   const backNine = Array.from({ length: 9 }, (_, i) => i + 10);
-  const rowLabels = [`(${left[0]}–${left[1]})`, `(${right[0]}–${right[1]})`];
+  const rowTeams = [
+    [getPlayerName(left[0]), getPlayerName(left[1])],
+    [getPlayerName(right[0]), getPlayerName(right[1])],
+  ];
 
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur">
@@ -235,7 +238,7 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
             <table className="w-full table-fixed">
               <thead>
                 <tr className="bg-white/[0.06]">
-                  <th className="w-20 px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:w-24 sm:px-3 sm:text-[11px]">
+                  <th className="w-32 px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:w-40 sm:px-3 sm:text-[11px] lg:w-44">
                     Team
                   </th>
                   {frontNine.map((col) => (
@@ -252,10 +255,13 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
                 </tr>
               </thead>
               <tbody>
-                {rowLabels.map((rowLabel) => (
-                  <tr key={`front-${rowLabel}`} className="border-t border-white/10">
+                {rowTeams.map((players, index) => (
+                  <tr key={`front-${index}`} className="border-t border-white/10 align-top">
                     <td className="px-2 py-2 text-[11px] font-semibold text-white/80 sm:px-3 sm:text-xs">
-                      {rowLabel}
+                      <div className="flex min-w-0 flex-col leading-tight">
+                        <span className="truncate">{players[0]}</span>
+                        <span className="truncate text-white/65">{players[1]}</span>
+                      </div>
                     </td>
                     {[...frontNine, 'OUT'].map((col) => (
                       <td
@@ -275,7 +281,7 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
             <table className="w-full table-fixed">
               <thead>
                 <tr className="bg-white/[0.06]">
-                  <th className="w-20 px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:w-24 sm:px-3 sm:text-[11px]">
+                  <th className="w-32 px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:w-40 sm:px-3 sm:text-[11px] lg:w-44">
                     Team
                   </th>
                   {backNine.map((col) => (
@@ -295,10 +301,13 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
                 </tr>
               </thead>
               <tbody>
-                {rowLabels.map((rowLabel) => (
-                  <tr key={`back-${rowLabel}`} className="border-t border-white/10">
+                {rowTeams.map((players, index) => (
+                  <tr key={`back-${index}`} className="border-t border-white/10 align-top">
                     <td className="px-2 py-2 text-[11px] font-semibold text-white/80 sm:px-3 sm:text-xs">
-                      {rowLabel}
+                      <div className="flex min-w-0 flex-col leading-tight">
+                        <span className="truncate">{players[0]}</span>
+                        <span className="truncate text-white/65">{players[1]}</span>
+                      </div>
                     </td>
                     {[...backNine, 'IN', 'TOT'].map((col) => (
                       <td
