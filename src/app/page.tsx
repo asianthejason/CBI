@@ -212,58 +212,86 @@ function Scorecard({
 
   const ScoreStrip = ({
     players,
+    scores,
     total,
     showTopBorder,
   }: {
     players: readonly [string, string];
+    scores: (number | null)[];
     total: number | null;
     showTopBorder?: boolean;
-  }) => (
-    <div
-      className={
-        "grid grid-cols-[110px_repeat(10,minmax(0,1fr))_56px] overflow-hidden sm:grid-cols-[130px_repeat(10,minmax(0,1fr))_62px] " +
-        (showTopBorder ? "border-t border-white/10" : "")
-      }
-    >
-      <div className="row-span-2 flex min-h-[96px] flex-col justify-center border-r border-white/10 px-2 py-3 text-[11px] font-semibold leading-5 text-white/85 sm:px-3 sm:text-xs">
-        <span className="truncate">{players[0]}</span>
-        <span className="truncate text-white/65">{players[1]}</span>
-      </div>
+  }) => {
+    const scoreTotals = calculateScoreTotals(scores);
 
-      {[...frontNine, "OUT"].map((hole) => (
-        <div
-          key={`front-label-${players[0]}-${hole}`}
-          className="flex h-[48px] min-w-0 flex-col items-center justify-center border-b border-white/10 bg-white/[0.05] px-0 text-center"
-        >
-          <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
-            {hole}
-          </span>
-          <span className="mt-1 text-sm font-semibold leading-none text-white/35">—</span>
+    return (
+      <div
+        className={
+          "grid grid-cols-[110px_repeat(10,minmax(0,1fr))_56px] overflow-hidden sm:grid-cols-[130px_repeat(10,minmax(0,1fr))_62px] " +
+          (showTopBorder ? "border-t border-white/10" : "")
+        }
+      >
+        <div className="row-span-2 flex min-h-[96px] flex-col justify-center border-r border-white/10 px-2 py-3 text-[11px] font-semibold leading-5 text-white/85 sm:px-3 sm:text-xs">
+          <span className="truncate">{players[0]}</span>
+          <span className="truncate text-white/65">{players[1]}</span>
         </div>
-      ))}
 
-      <div className="row-span-2 flex min-h-[96px] flex-col items-center justify-center border-l border-white/10 px-1 text-center">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60 sm:text-[11px]">
-          Tot
-        </span>
-        <span className="mt-2 text-base font-semibold text-white/85 sm:text-lg">
-          {typeof total === "number" ? total : "—"}
-        </span>
-      </div>
+        {frontNine.map((hole) => (
+          <div
+            key={`front-label-${players[0]}-${hole}`}
+            className="flex h-[48px] min-w-0 flex-col items-center justify-center border-b border-white/10 bg-white/[0.05] px-0 text-center"
+          >
+            <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
+              {hole}
+            </span>
+            <span className="mt-1 text-sm font-semibold leading-none text-white/85">
+              {scores[hole - 1] ?? "—"}
+            </span>
+          </div>
+        ))}
 
-      {[...backNine, "IN"].map((hole) => (
-        <div
-          key={`back-label-${players[0]}-${hole}`}
-          className="flex h-[48px] min-w-0 flex-col items-center justify-center px-0 text-center"
-        >
+        <div className="flex h-[48px] min-w-0 flex-col items-center justify-center border-b border-l border-white/10 bg-white/[0.05] px-0 text-center">
           <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
-            {hole}
+            OUT
           </span>
-          <span className="mt-1 text-sm font-semibold leading-none text-white/35">—</span>
+          <span className="mt-1 text-sm font-semibold leading-none text-white/85">
+            {scoreTotals.out ?? "—"}
+          </span>
         </div>
-      ))}
-    </div>
-  );
+
+        <div className="row-span-2 flex min-h-[96px] flex-col items-center justify-center border-l border-white/10 px-1 text-center">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60 sm:text-[11px]">
+            Tot
+          </span>
+          <span className="mt-2 text-base font-semibold text-white/85 sm:text-lg">
+            {typeof total === "number" ? total : "—"}
+          </span>
+        </div>
+
+        {backNine.map((hole) => (
+          <div
+            key={`back-label-${players[0]}-${hole}`}
+            className="flex h-[48px] min-w-0 flex-col items-center justify-center px-0 text-center"
+          >
+            <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
+              {hole}
+            </span>
+            <span className="mt-1 text-sm font-semibold leading-none text-white/85">
+              {scores[hole - 1] ?? "—"}
+            </span>
+          </div>
+        ))}
+
+        <div className="flex h-[48px] min-w-0 flex-col items-center justify-center border-l border-white/10 px-0 text-center">
+          <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
+            IN
+          </span>
+          <span className="mt-1 text-sm font-semibold leading-none text-white/85">
+            {scoreTotals.in ?? "—"}
+          </span>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur">
@@ -289,8 +317,8 @@ function Scorecard({
         </div>
 
         <div className="mt-4 rounded-xl border border-white/10 bg-black/20">
-          <ScoreStrip players={rowTeams[0]} total={totals[0]} />
-          <ScoreStrip players={rowTeams[1]} total={totals[1]} showTopBorder />
+          <ScoreStrip players={rowTeams[0]} scores={score.left} total={totals[0]} />
+          <ScoreStrip players={rowTeams[1]} scores={score.right} total={totals[1]} showTopBorder />
         </div>
       </div>
     </div>
