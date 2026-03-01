@@ -205,9 +205,9 @@ function MatchupsRoundCard({ round }: { round: RoundSchedule }) {
 function Scorecard({ title, left, right }: { title: string; left: Pair; right: Pair }) {
   const frontNine = Array.from({ length: 9 }, (_, i) => i + 1);
   const backNine = Array.from({ length: 9 }, (_, i) => i + 10);
-  const rowLabels = [
-    `${getPlayerName(left[0])} / ${getPlayerName(left[1])}`,
-    `${getPlayerName(right[0])} / ${getPlayerName(right[1])}`,
+  const rowTeams = [
+    [getPlayerName(left[0]), getPlayerName(left[1])],
+    [getPlayerName(right[0]), getPlayerName(right[1])],
   ];
 
   return (
@@ -255,10 +255,13 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
                 </tr>
               </thead>
               <tbody>
-                {rowLabels.map((rowLabel) => (
-                  <tr key={`front-${rowLabel}`} className="border-t border-white/10">
-                    <td className="truncate px-2 py-2 text-[11px] font-semibold text-white/80 sm:px-3 sm:text-xs">
-                      {rowLabel}
+                {rowTeams.map((players, index) => (
+                  <tr key={`front-${index}`} className="border-t border-white/10 align-top">
+                    <td className="px-2 py-2 text-[11px] font-semibold text-white/80 sm:px-3 sm:text-xs">
+                      <div className="flex min-w-0 flex-col leading-tight">
+                        <span className="truncate">{players[0]}</span>
+                        <span className="truncate text-white/65">{players[1]}</span>
+                      </div>
                     </td>
                     {[...frontNine, 'OUT'].map((col) => (
                       <td
@@ -298,10 +301,13 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
                 </tr>
               </thead>
               <tbody>
-                {rowLabels.map((rowLabel) => (
-                  <tr key={`back-${rowLabel}`} className="border-t border-white/10">
-                    <td className="truncate px-2 py-2 text-[11px] font-semibold text-white/80 sm:px-3 sm:text-xs">
-                      {rowLabel}
+                {rowTeams.map((players, index) => (
+                  <tr key={`back-${index}`} className="border-t border-white/10 align-top">
+                    <td className="px-2 py-2 text-[11px] font-semibold text-white/80 sm:px-3 sm:text-xs">
+                      <div className="flex min-w-0 flex-col leading-tight">
+                        <span className="truncate">{players[0]}</span>
+                        <span className="truncate text-white/65">{players[1]}</span>
+                      </div>
                     </td>
                     {[...backNine, 'IN', 'TOT'].map((col) => (
                       <td
