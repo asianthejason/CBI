@@ -2,12 +2,14 @@
 
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
+  calculateScoreTotals,
   ROUND_LABELS,
   TEAM_IDS,
   TEAM_SLOT_LABELS,
   getPlayerName,
   getRoundSchedule,
   getTeamPlayerLabels,
+  type MatchHoleScore,
   type Pair,
   type RoundLabel,
   type TeamId,
@@ -29,14 +31,13 @@ function useCountdown(target: Date) {
 
   const safeNow = now ?? new Date();
   const diffMs = target.getTime() - safeNow.getTime();
-  const done = diffMs <= 0;
   const totalSec = Math.floor(Math.max(0, diffMs) / 1000);
   const days = Math.floor(totalSec / (24 * 3600));
   const hours = Math.floor((totalSec % (24 * 3600)) / 3600);
   const minutes = Math.floor((totalSec % 3600) / 60);
   const seconds = totalSec % 60;
 
-  return { days, hours, minutes, seconds, done };
+  return { days, hours, minutes, seconds };
 }
 
 function Pill({ children }: { children: ReactNode }) {
@@ -142,6 +143,17 @@ function TeamTable({
   );
 }
 
+function formatMatchSummary(score: MatchHoleScore) {
+  const leftTotals = calculateScoreTotals(score.left);
+  const rightTotals = calculateScoreTotals(score.right);
+
+  if (leftTotals.total === null && rightTotals.total === null) {
+    return null;
+  }
+
+  return `${leftTotals.total ?? 0} - ${rightTotals.total ?? 0}`;
+}
+
 function MatchupCard({
   match,
   playerNames,
@@ -149,9 +161,9 @@ function MatchupCard({
 }: {
   match: { id: number; left: Pair; right: Pair };
   playerNames: Record<string, string>;
-  score: { left: number | null; right: number | null };
+  score: MatchHoleScore;
 }) {
-  const hasScore = typeof score.left === "number" && typeof score.right === "number";
+  const summary = formatMatchSummary(score);
 
   return (
     <div className="relative min-w-[280px] overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur">
@@ -165,11 +177,7 @@ function MatchupCard({
           </span>
           <span className="text-sm font-semibold text-white/90">Match {match.id}</span>
         </div>
-        {hasScore ? (
-          <Pill>
-            {score.left} - {score.right}
-          </Pill>
-        ) : null}
+        {summary ? <Pill>{summary}</Pill> : null}
       </div>
 
       <div className="relative flex min-w-0 flex-col gap-3">
@@ -192,70 +200,49 @@ function Scorecard({
   left: Pair;
   right: Pair;
   playerNames: Record<string, string>;
-  score: { left: number | null; right: number | null };
+  score: MatchHoleScore;
 }) {
   const frontNine = Array.from({ length: 9 }, (_, i) => i + 1);
   const backNine = Array.from({ length: 9 }, (_, i) => i + 10);
-  const rowTeams = [
-    [getPlayerName(playerNames, left[0]), getPlayerName(playerNames, left[1])],
-    [getPlayerName(playerNames, right[0]), getPlayerName(playerNames, right[1])],
-  ] as const;
 
-  const totals = [score.left, score.right] as const;
-  const hasScore = typeof score.left === "number" && typeof score.right === "number";
+  const leftName = `${getPlayerName(playerNames, left[0])} / ${getPlayerName(playerNames, left[1])}`;
+  const rightName = `${getPlayerName(playerNames, right[0])} / ${getPlayerName(playerNames, right[1])}`;
+  const leftTotals = calculateScoreTotals(score.left);
+  const rightTotals = calculateScoreTotals(score.right);
 
-  const ScoreStrip = ({
-    players,
-    total,
-    showTopBorder,
+  const Cell = ({ value, muted = false }: { value: ReactNode; muted?: boolean }) => (
+    <div className={"flex h-11 min-w-[40px] items-center justify-center border-l border-white/10 px-1 text-center text-sm font-semibold " + (muted ? "text-white/60" : "text-white/88")}>
+      {value}
+    </div>
+  );
+
+  const ScoreRow = ({
+    name,
+    holes,
+    totals,
+    topBorder = false,
   }: {
-    players: readonly [string, string];
-    total: number | null;
-    showTopBorder?: boolean;
+    name: string;
+    holes: Array<number | null>;
+    totals: { out: number | null; in: number | null; total: number | null };
+    topBorder?: boolean;
   }) => (
     <div
       className={
-        "grid grid-cols-[110px_repeat(10,minmax(0,1fr))_56px] overflow-hidden sm:grid-cols-[130px_repeat(10,minmax(0,1fr))_62px] " +
-        (showTopBorder ? "border-t border-white/10" : "")
+        "grid min-w-[980px] grid-cols-[200px_repeat(9,minmax(40px,1fr))_56px_repeat(9,minmax(40px,1fr))_56px_56px] bg-transparent " +
+        (topBorder ? "border-t border-white/10" : "")
       }
     >
-      <div className="row-span-2 flex min-h-[96px] flex-col justify-center border-r border-white/10 px-2 py-3 text-[11px] font-semibold leading-5 text-white/85 sm:px-3 sm:text-xs">
-        <span className="truncate">{players[0]}</span>
-        <span className="truncate text-white/65">{players[1]}</span>
-      </div>
-
-      {[...frontNine, "OUT"].map((hole) => (
-        <div
-          key={`front-label-${players[0]}-${hole}`}
-          className="flex h-[48px] min-w-0 flex-col items-center justify-center border-b border-white/10 bg-white/[0.05] px-0 text-center"
-        >
-          <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
-            {hole}
-          </span>
-          <span className="mt-1 text-sm font-semibold leading-none text-white/35">—</span>
-        </div>
+      <div className="flex h-11 items-center px-3 text-sm font-semibold text-white/88">{name}</div>
+      {holes.slice(0, 9).map((value, index) => (
+        <Cell key={`front-${name}-${index}`} value={value ?? "—"} />
       ))}
-
-      <div className="row-span-2 flex min-h-[96px] flex-col items-center justify-center border-l border-white/10 px-1 text-center">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60 sm:text-[11px]">
-          Tot
-        </span>
-        <span className="mt-2 text-base font-semibold text-white/85 sm:text-lg">
-          {typeof total === "number" ? total : "—"}
-        </span>
-      </div>
-
-      {[...backNine, "IN"].map((hole) => (
-        <div
-          key={`back-label-${players[0]}-${hole}`}
-          className="flex h-[48px] min-w-0 flex-col items-center justify-center px-0 text-center"
-        >
-          <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
-            {hole}
-          </span>
-          <span className="mt-1 text-sm font-semibold leading-none text-white/35">—</span>
-        </div>
+      <Cell value={totals.out ?? "—"} muted />
+      {holes.slice(9, 18).map((value, index) => (
+        <Cell key={`back-${name}-${index}`} value={value ?? "—"} />
       ))}
+      <Cell value={totals.in ?? "—"} muted />
+      <Cell value={totals.total ?? "—"} muted />
     </div>
   );
 
@@ -279,12 +266,27 @@ function Scorecard({
               </Pill>
             </div>
           </div>
-          <Pill>{hasScore ? `${score.left} - ${score.right}` : "Score"}</Pill>
+          <Pill>{formatMatchSummary(score) ?? "Score"}</Pill>
         </div>
 
-        <div className="mt-4 rounded-xl border border-white/10 bg-black/20">
-          <ScoreStrip players={rowTeams[0]} total={totals[0]} />
-          <ScoreStrip players={rowTeams[1]} total={totals[1]} showTopBorder />
+        <div className="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-black/20">
+          <div className="grid min-w-[980px] grid-cols-[200px_repeat(9,minmax(40px,1fr))_56px_repeat(9,minmax(40px,1fr))_56px_56px] border-b border-white/10 bg-white/[0.04]">
+            <div className="flex h-11 items-center px-3 text-xs font-semibold uppercase tracking-[0.16em] text-white/60">
+              Pairing
+            </div>
+            {frontNine.map((hole) => (
+              <Cell key={`head-front-${hole}`} value={hole} muted />
+            ))}
+            <Cell value="OUT" muted />
+            {backNine.map((hole) => (
+              <Cell key={`head-back-${hole}`} value={hole} muted />
+            ))}
+            <Cell value="IN" muted />
+            <Cell value="TOT" muted />
+          </div>
+
+          <ScoreRow name={leftName} holes={score.left} totals={leftTotals} />
+          <ScoreRow name={rightName} holes={score.right} totals={rightTotals} topBorder />
         </div>
       </div>
     </div>
@@ -434,7 +436,7 @@ export default function Home() {
             })}
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-1">
             {activeSchedule.matches.map((match) => (
               <Scorecard
                 key={`${activeSchedule.roundLabel}-${match.id}`}
