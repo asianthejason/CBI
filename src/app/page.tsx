@@ -205,7 +205,7 @@ function MatchupsRoundCard({ round }: { round: RoundSchedule }) {
 function Scorecard({ title, left, right }: { title: string; left: Pair; right: Pair }) {
   const frontNine = Array.from({ length: 9 }, (_, i) => i + 1);
   const backNine = Array.from({ length: 9 }, (_, i) => i + 10);
-  const columns = [...frontNine, "OUT", ...backNine, "IN", "TOT"] as const;
+  const rowLabels = [`(${left[0]}–${left[1]})`, `(${right[0]}–${right[1]})`];
 
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur">
@@ -230,41 +230,89 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
           <Pill>Score</Pill>
         </div>
 
-        <div className="mt-4 overflow-hidden rounded-xl border border-white/10 bg-black/20">
-          <table className="w-full table-fixed">
-            <thead>
-              <tr className="bg-white/[0.06]">
-                <th className="w-36 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-white/70">
-                  Team
-                </th>
-                {columns.map((col) => (
-                  <th
-                    key={col}
-                    className="px-1 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:text-[11px]"
-                  >
-                    {col}
+        <div className="mt-4 flex flex-col gap-3">
+          <div className="overflow-hidden rounded-xl border border-white/10 bg-black/20">
+            <table className="w-full table-fixed">
+              <thead>
+                <tr className="bg-white/[0.06]">
+                  <th className="w-20 px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:w-24 sm:px-3 sm:text-[11px]">
+                    Team
                   </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {[`(${left[0]}–${left[1]})`, `(${right[0]}–${right[1]})`].map((rowLabel) => (
-                <tr key={rowLabel} className="border-t border-white/10">
-                  <td className="px-3 py-2 text-xs font-semibold text-white/80">
-                    {rowLabel}
-                  </td>
-                  {columns.map((col) => (
-                    <td
+                  {frontNine.map((col) => (
+                    <th
                       key={col}
-                      className="px-1 py-2 text-center text-xs font-semibold text-white/35 sm:text-sm"
+                      className="px-0.5 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:px-1 sm:text-[11px]"
                     >
-                      —
-                    </td>
+                      {col}
+                    </th>
                   ))}
+                  <th className="px-0.5 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:px-1 sm:text-[11px]">
+                    Out
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {rowLabels.map((rowLabel) => (
+                  <tr key={`front-${rowLabel}`} className="border-t border-white/10">
+                    <td className="px-2 py-2 text-[11px] font-semibold text-white/80 sm:px-3 sm:text-xs">
+                      {rowLabel}
+                    </td>
+                    {[...frontNine, 'OUT'].map((col) => (
+                      <td
+                        key={col}
+                        className="px-0.5 py-2 text-center text-[11px] font-semibold text-white/35 sm:px-1 sm:text-sm"
+                      >
+                        —
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="overflow-hidden rounded-xl border border-white/10 bg-black/20">
+            <table className="w-full table-fixed">
+              <thead>
+                <tr className="bg-white/[0.06]">
+                  <th className="w-20 px-2 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:w-24 sm:px-3 sm:text-[11px]">
+                    Team
+                  </th>
+                  {backNine.map((col) => (
+                    <th
+                      key={col}
+                      className="px-0.5 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:px-1 sm:text-[11px]"
+                    >
+                      {col}
+                    </th>
+                  ))}
+                  <th className="px-0.5 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:px-1 sm:text-[11px]">
+                    In
+                  </th>
+                  <th className="px-0.5 py-2 text-center text-[10px] font-semibold uppercase tracking-wide text-white/70 sm:px-1 sm:text-[11px]">
+                    Tot
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {rowLabels.map((rowLabel) => (
+                  <tr key={`back-${rowLabel}`} className="border-t border-white/10">
+                    <td className="px-2 py-2 text-[11px] font-semibold text-white/80 sm:px-3 sm:text-xs">
+                      {rowLabel}
+                    </td>
+                    {[...backNine, 'IN', 'TOT'].map((col) => (
+                      <td
+                        key={col}
+                        className="px-0.5 py-2 text-center text-[11px] font-semibold text-white/35 sm:px-1 sm:text-sm"
+                      >
+                        —
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div className="mt-3 flex items-center justify-between gap-3 text-xs text-white/55">
@@ -272,7 +320,7 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400/80" />
             Admin page coming soon for scores
           </span>
-          <span className="hidden sm:inline">Front 9, back 9, and total are ready for scoring</span>
+          <span className="hidden sm:inline">Front 9 and back 9 are split for easier mobile reading</span>
         </div>
       </div>
     </div>
@@ -471,7 +519,7 @@ export default function Home() {
         <section className="flex flex-col gap-4">
           <SectionTitle
             title="Scorecards"
-            subtitle="Each round shows 4 full-width scorecards with holes 1–18, front-nine total, back-nine total, and grand total."
+            subtitle="Each round shows 4 half-width scorecards with front 9 on the first row and back 9 underneath for easier mobile viewing."
           />
 
           <div className="flex flex-wrap items-center gap-2">
@@ -498,7 +546,7 @@ export default function Home() {
             })}
           </div>
 
-          <div className="flex flex-col gap-4">
+          <div className="grid gap-4 lg:grid-cols-2">
             {activeSchedule.matches.map((m) => (
               <Scorecard
                 key={`${activeSchedule.roundLabel}-${m.id}`}
