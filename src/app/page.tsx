@@ -258,9 +258,9 @@ function Scorecard({ title, left, right }: { title: string; left: Pair; right: P
 }
 
 export default function Home() {
-  // Change this to your real draft date/time later.
-  // Tip: keep it in local time by leaving off the trailing "Z".
-  const draftDate = useMemo(() => new Date("2026-04-05T18:00:00"), []);
+  // Draft countdown target in local time.
+  // Leaving off the trailing "Z" keeps it in the viewer's local timezone.
+  const draftDate = useMemo(() => new Date("2026-07-09T20:00:00"), []);
   const cd = useCountdown(draftDate);
   const [activeRound, setActiveRound] = useState<"Round 1" | "Round 2" | "Round 3">(
     "Round 1",
