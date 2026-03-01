@@ -29,16 +29,16 @@ function getPlayerName(label: string) {
 
 function PlayerBadge({ label }: { label: string }) {
   return (
-    <div className="inline-flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/90 shadow-sm">
-      <span className="font-semibold text-emerald-200">{label}</span>
-      <span className="truncate text-white/70">{getPlayerName(label)}</span>
+    <div className="flex w-full min-w-0 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/90 shadow-sm">
+      <span className="shrink-0 font-semibold text-emerald-200">{label}</span>
+      <span className="min-w-0 truncate text-white/70">{getPlayerName(label)}</span>
     </div>
   );
 }
 
 function PairStack({ pair }: { pair: Pair }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
+    <div className="min-w-0 rounded-xl border border-white/10 bg-white/[0.04] p-2.5">
       <div className="flex flex-col gap-2">
         <PlayerBadge label={pair[0]} />
         <PlayerBadge label={pair[1]} />
@@ -169,58 +169,34 @@ function MatchupsRoundCard({ round }: { round: RoundSchedule }) {
       <div className="relative flex items-start justify-between gap-4">
         <div>
           <div className="text-base font-semibold text-white">{round.roundLabel}</div>
-          <div className="mt-1 text-xs text-white/65">Pairings + matches</div>
+          <div className="mt-1 text-xs text-white/65">Matches</div>
         </div>
         <Pill>8 groups</Pill>
       </div>
 
-      <div className="relative mt-4 flex flex-col gap-4">
-        <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-          <div className="mb-3 text-xs font-semibold tracking-wide text-white/70">
-            Team pairings
-          </div>
-          <div className="flex flex-col gap-3">
-            {(
-              ["A", "B", "C", "D"] as const
-            ).map((t) => (
-              <div key={t} className="rounded-xl border border-white/8 bg-white/[0.03] p-3">
-                <div className="mb-3 text-xs font-semibold uppercase tracking-wide text-white/70">
-                  Team {t}
-                </div>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {round.teamPairs[t].map((p) => (
-                    <PairStack key={`${t}-${p[0]}-${p[1]}`} pair={p} />
-                  ))}
-                </div>
+      <div className="relative mt-4 rounded-xl border border-white/10 bg-black/20 p-3">
+        <div className="mb-3 text-xs font-semibold tracking-wide text-white/70">
+          Matches
+        </div>
+        <ol className="flex flex-col gap-3">
+          {round.matches.map((m) => (
+            <li key={m.id} className="rounded-xl border border-white/8 bg-white/[0.03] p-3">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-white/10 text-xs font-semibold text-white/85">
+                  {m.id}
+                </span>
+                <span className="text-sm font-semibold text-white/90">Match {m.id}</span>
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-          <div className="mb-3 text-xs font-semibold tracking-wide text-white/70">
-            Matches
-          </div>
-          <ol className="flex flex-col gap-3">
-            {round.matches.map((m) => (
-              <li key={m.id} className="rounded-xl border border-white/8 bg-white/[0.03] p-3">
-                <div className="mb-3 flex items-center gap-2">
-                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-white/10 text-xs font-semibold text-white/85">
-                    {m.id}
-                  </span>
-                  <span className="text-sm font-semibold text-white/90">Match {m.id}</span>
+              <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center">
+                <PairStack pair={m.left} />
+                <div className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
+                  vs
                 </div>
-                <div className="grid gap-3 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
-                  <PairStack pair={m.left} />
-                  <div className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
-                    vs
-                  </div>
-                  <PairStack pair={m.right} />
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
+                <PairStack pair={m.right} />
+              </div>
+            </li>
+          ))}
+        </ol>
       </div>
     </div>
   );
@@ -482,7 +458,7 @@ export default function Home() {
         <section className="flex flex-col gap-4">
           <SectionTitle
             title="Matchups"
-            subtitle="Pairings and matches are stacked for more room so player labels and names stay easy to read."
+            subtitle="Showing matches only so the layout stays cleaner and player labels + names have enough room."
           />
           <div className="grid gap-4 lg:grid-cols-3">
             {rounds.map((r) => (
