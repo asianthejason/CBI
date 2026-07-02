@@ -105,11 +105,13 @@ function getInitials(name: string, fallback: string) {
 function CaptainCard({
   team,
   captain,
+  captainNumber,
 }: {
   team: TeamId;
   captain: CaptainInfo;
+  captainNumber: number;
 }) {
-  const displayName = captain.name.trim() || `Team ${team} Captain`;
+  const displayName = captain.name.trim() || `Captain ${captainNumber}`;
   const imageUrl = captain.imageUrl.trim();
 
   return (
@@ -136,10 +138,7 @@ function CaptainCard({
         </div>
 
         <div className="min-w-0">
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200/80">
-            Team {team} Captain
-          </div>
-          <div className="mt-1 truncate text-lg font-semibold tracking-tight text-white">{displayName}</div>
+          <div className="truncate text-lg font-semibold tracking-tight text-white">{displayName}</div>
         </div>
       </div>
     </div>
@@ -451,8 +450,8 @@ export default function Home() {
         <section className="flex flex-col gap-4">
           <SectionTitle title="Captains" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {TEAM_IDS.map((team) => (
-              <CaptainCard key={team} team={team} captain={state.captains[team]} />
+            {TEAM_IDS.map((team, index) => (
+              <CaptainCard key={team} team={team} captain={state.captains[team]} captainNumber={index + 1} />
             ))}
           </div>
         </section>

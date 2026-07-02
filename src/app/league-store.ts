@@ -152,10 +152,10 @@ export const DEFAULT_PLAYER_NAMES: Record<string, string> = {
 };
 
 export const DEFAULT_CAPTAINS: Record<TeamId, CaptainInfo> = {
-  A: { name: "Captain A", imageUrl: "" },
-  B: { name: "Captain B", imageUrl: "" },
-  C: { name: "Captain C", imageUrl: "" },
-  D: { name: "Captain D", imageUrl: "" },
+  A: { name: "Captain 1", imageUrl: "" },
+  B: { name: "Captain 2", imageUrl: "" },
+  C: { name: "Captain 3", imageUrl: "" },
+  D: { name: "Captain 4", imageUrl: "" },
 };
 
 function createEmptyHoleScores(): HoleScores {

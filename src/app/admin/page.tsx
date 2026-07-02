@@ -54,11 +54,13 @@ function getInitials(name: string, fallback: string) {
 function CaptainPhotoPreview({
   team,
   captain,
+  captainNumber,
 }: {
   team: TeamId;
   captain: CaptainInfo;
+  captainNumber: number;
 }) {
-  const displayName = captain.name.trim() || `Team ${team} Captain`;
+  const displayName = captain.name.trim() || `Captain ${captainNumber}`;
   const imageUrl = captain.imageUrl.trim();
 
   return (
@@ -406,11 +408,12 @@ export default function AdminPage() {
             <section className="flex flex-col gap-4">
               <SectionTitle
                 title="Captains"
-                subtitle="Add one captain name and photo URL for each team. Autosave updates the live homepage."
+                subtitle="Add the four captain names and photo URLs. Autosave updates the live homepage."
               />
 
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {TEAM_IDS.map((team: TeamId) => {
+                {TEAM_IDS.map((team: TeamId, index) => {
+                  const captainNumber = index + 1;
                   const captain = draftState.captains[team];
 
                   return (
@@ -423,12 +426,9 @@ export default function AdminPage() {
                       </div>
 
                       <div className="relative flex items-center gap-3 pb-4">
-                        <CaptainPhotoPreview team={team} captain={captain} />
+                        <CaptainPhotoPreview team={team} captain={captain} captainNumber={captainNumber} />
                         <div className="min-w-0">
-                          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200/80">
-                            Team {team}
-                          </div>
-                          <div className="mt-1 truncate text-sm font-semibold text-white">Captain Info</div>
+                          <div className="truncate text-sm font-semibold text-white">Captain {captainNumber}</div>
                         </div>
                       </div>
 
@@ -440,7 +440,7 @@ export default function AdminPage() {
                           <input
                             value={captain.name}
                             onChange={(event) => updateCaptainInfo(team, "name", event.target.value)}
-                            placeholder={`Enter Team ${team} captain`}
+                            placeholder={`Enter Captain ${captainNumber}`}
                             className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-emerald-300/40"
                           />
                         </label>
