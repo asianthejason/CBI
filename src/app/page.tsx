@@ -425,24 +425,32 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="mt-4 grid grid-cols-4 gap-2 sm:gap-3">
-                {[
-                  { label: "Days", value: String(cd.days) },
-                  { label: "Hours", value: format2(cd.hours) },
-                  { label: "Mins", value: format2(cd.minutes) },
-                  { label: "Secs", value: format2(cd.seconds) },
-                ].map((b) => (
-                  <div
-                    key={b.label}
-                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-center"
-                  >
-                    <div className="text-2xl font-semibold tabular-nums text-white sm:text-3xl">{b.value}</div>
-                    <div className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-white/60">
-                      {b.label}
-                    </div>
+              {cd.done ? (
+                <div className="mt-4 rounded-xl border border-white/10 bg-white/5 px-4 py-6 text-center">
+                  <div className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+                    May The Cock God Be With You
                   </div>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <div className="mt-4 grid grid-cols-4 gap-2 sm:gap-3">
+                  {[
+                    { label: "Days", value: String(cd.days) },
+                    { label: "Hours", value: format2(cd.hours) },
+                    { label: "Mins", value: format2(cd.minutes) },
+                    { label: "Secs", value: format2(cd.seconds) },
+                  ].map((b) => (
+                    <div
+                      key={b.label}
+                      className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-center"
+                    >
+                      <div className="text-2xl font-semibold tabular-nums text-white sm:text-3xl">{b.value}</div>
+                      <div className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-white/60">
+                        {b.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </section>
