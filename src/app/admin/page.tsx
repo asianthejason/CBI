@@ -13,6 +13,7 @@ import {
   getTeamPlayerLabels,
   TEAM_IDS,
   TEAM_SLOT_LABELS,
+  type CaptainInfo,
   type LeagueState,
   type RoundLabel,
   type TeamId,
@@ -34,6 +35,47 @@ function SectionTitle({ title, subtitle }: { title: string; subtitle?: string })
     <div className="flex flex-col gap-1">
       <h2 className="text-lg font-semibold tracking-tight text-white">{title}</h2>
       {subtitle ? <p className="text-sm text-white/70">{subtitle}</p> : null}
+    </div>
+  );
+}
+
+function getInitials(name: string, fallback: string) {
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+
+  return initials || fallback;
+}
+
+function CaptainPhotoPreview({
+  team,
+  captain,
+}: {
+  team: TeamId;
+  captain: CaptainInfo;
+}) {
+  const displayName = captain.name.trim() || `Team ${team} Captain`;
+  const imageUrl = captain.imageUrl.trim();
+
+  return (
+    <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black/25 shadow-inner">
+      {imageUrl ? (
+        <div
+          aria-label={`${displayName} captain preview`}
+          className="h-full w-full bg-cover bg-center"
+          role="img"
+          style={{ backgroundImage: `url(${JSON.stringify(imageUrl)})` }}
+        />
+      ) : (
+        <div className="flex h-full w-full flex-col items-center justify-center bg-white/[0.04] text-center">
+          <span className="text-2xl font-semibold text-white/85">{getInitials(displayName, team)}</span>
+          <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/35">Photo</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -177,6 +219,21 @@ export default function AdminPage() {
   }, [liveError]);
 
   const activeSchedule = useMemo(() => getRoundSchedule(activeRound), [activeRound]);
+
+  const updateCaptainInfo = (team: TeamId, field: keyof CaptainInfo, value: string) => {
+    setDraftState((current) => ({
+      ...current,
+      captains: {
+        ...current.captains,
+        [team]: {
+          ...current.captains[team],
+          [field]: value,
+        },
+      },
+    }));
+    setIsDirty(true);
+    setSaveMessage("Unsaved changes");
+  };
 
   const updatePlayerName = (label: string, value: string) => {
     setDraftState((current) => ({
@@ -345,6 +402,66 @@ export default function AdminPage() {
                 Firestore can&apos;t read or write this league document right now. Check your Firestore rules and make sure the signed-in email is allowed.
               </section>
             ) : null}
+
+            <section className="flex flex-col gap-4">
+              <SectionTitle
+                title="Captains"
+                subtitle="Add one captain name and photo URL for each team. Autosave updates the live homepage."
+              />
+
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {TEAM_IDS.map((team: TeamId) => {
+                  const captain = draftState.captains[team];
+
+                  return (
+                    <div
+                      key={team}
+                      className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur"
+                    >
+                      <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                        <div className="h-full w-full bg-[radial-gradient(circle_at_30%_20%,rgba(34,197,94,0.18),transparent_55%),radial-gradient(circle_at_70%_80%,rgba(16,185,129,0.14),transparent_55%)]" />
+                      </div>
+
+                      <div className="relative flex items-center gap-3 pb-4">
+                        <CaptainPhotoPreview team={team} captain={captain} />
+                        <div className="min-w-0">
+                          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200/80">
+                            Team {team}
+                          </div>
+                          <div className="mt-1 truncate text-sm font-semibold text-white">Captain Info</div>
+                        </div>
+                      </div>
+
+                      <div className="relative space-y-3">
+                        <label className="block">
+                          <div className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">
+                            Captain Name
+                          </div>
+                          <input
+                            value={captain.name}
+                            onChange={(event) => updateCaptainInfo(team, "name", event.target.value)}
+                            placeholder={`Enter Team ${team} captain`}
+                            className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-emerald-300/40"
+                          />
+                        </label>
+
+                        <label className="block">
+                          <div className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">
+                            Photo URL
+                          </div>
+                          <input
+                            value={captain.imageUrl}
+                            onChange={(event) => updateCaptainInfo(team, "imageUrl", event.target.value)}
+                            placeholder="https://example.com/photo.jpg"
+                            className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-emerald-300/40"
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
 
             <section className="flex flex-col gap-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

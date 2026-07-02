@@ -10,6 +10,7 @@ import {
   getPlayerName,
   getRoundSchedule,
   getTeamPlayerLabels,
+  type CaptainInfo,
   type MatchHoleScore,
   type Pair,
   type RoundLabel,
@@ -22,16 +23,14 @@ function format2(n: number) {
 }
 
 function useCountdown(target: Date) {
-  const [now, setNow] = useState<Date | null>(null);
+  const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
-    setNow(new Date());
     const timer = window.setInterval(() => setNow(new Date()), 250);
     return () => window.clearInterval(timer);
   }, []);
 
-  const safeNow = now ?? new Date();
-  const diffMs = target.getTime() - safeNow.getTime();
+  const diffMs = target.getTime() - now.getTime();
   const done = diffMs <= 0;
   const totalSec = Math.floor(Math.max(0, diffMs) / 1000);
   const days = Math.floor(totalSec / (24 * 3600));
@@ -86,6 +85,62 @@ function PairStack({
       <div className="flex flex-col gap-2">
         <PlayerBadge label={pair[0]} playerNames={playerNames} />
         <PlayerBadge label={pair[1]} playerNames={playerNames} />
+      </div>
+    </div>
+  );
+}
+
+function getInitials(name: string, fallback: string) {
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+
+  return initials || fallback;
+}
+
+function CaptainCard({
+  team,
+  captain,
+}: {
+  team: TeamId;
+  captain: CaptainInfo;
+}) {
+  const displayName = captain.name.trim() || `Team ${team} Captain`;
+  const imageUrl = captain.imageUrl.trim();
+
+  return (
+    <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur">
+      <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+        <div className="h-full w-full bg-[radial-gradient(circle_at_30%_20%,rgba(34,197,94,0.2),transparent_55%),radial-gradient(circle_at_70%_80%,rgba(16,185,129,0.15),transparent_55%)]" />
+      </div>
+
+      <div className="relative flex items-center gap-4">
+        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black/25 shadow-inner">
+          {imageUrl ? (
+            <div
+              aria-label={`${displayName} captain photo`}
+              className="h-full w-full bg-cover bg-center"
+              role="img"
+              style={{ backgroundImage: `url(${JSON.stringify(imageUrl)})` }}
+            />
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center bg-white/[0.04] text-center">
+              <span className="text-2xl font-semibold text-white/85">{getInitials(displayName, team)}</span>
+              <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/35">Photo</span>
+            </div>
+          )}
+        </div>
+
+        <div className="min-w-0">
+          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-200/80">
+            Team {team} Captain
+          </div>
+          <div className="mt-1 truncate text-lg font-semibold tracking-tight text-white">{displayName}</div>
+        </div>
       </div>
     </div>
   );
@@ -186,6 +241,92 @@ function MatchupCard({
   );
 }
 
+const FRONT_NINE_SCORECARD = Array.from({ length: 9 }, (_, i) => i + 1);
+const BACK_NINE_SCORECARD = Array.from({ length: 9 }, (_, i) => i + 10);
+
+function ScoreStrip({
+  players,
+  scores,
+  total,
+  showTopBorder,
+}: {
+  players: readonly [string, string];
+  scores: (number | null)[];
+  total: number | null;
+  showTopBorder?: boolean;
+}) {
+  const scoreTotals = calculateScoreTotals(scores);
+
+  return (
+    <div
+      className={
+        "grid grid-cols-[92px_repeat(10,minmax(0,1fr))_52px] overflow-hidden sm:grid-cols-[108px_repeat(10,minmax(0,1fr))_58px] " +
+        (showTopBorder ? "border-t border-white/10" : "")
+      }
+    >
+      <div className="row-span-2 flex min-h-[96px] flex-col justify-center border-r border-white/10 px-1.5 py-3 text-[10px] font-semibold leading-5 text-white/85 sm:px-2 sm:text-[11px]">
+        <span className="truncate">{players[0]}</span>
+        <span className="truncate text-white/65">{players[1]}</span>
+      </div>
+
+      {FRONT_NINE_SCORECARD.map((hole) => (
+        <div
+          key={`front-label-${players[0]}-${hole}`}
+          className="flex h-[48px] min-w-0 flex-col items-center justify-center border-b border-white/10 bg-white/[0.05] px-0 text-center"
+        >
+          <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
+            {hole}
+          </span>
+          <span className="mt-1 text-sm font-semibold leading-none text-white/85">
+            {scores[hole - 1] ?? "—"}
+          </span>
+        </div>
+      ))}
+
+      <div className="flex h-[48px] min-w-0 flex-col items-center justify-center border-b border-l border-white/10 bg-white/[0.05] px-0 text-center">
+        <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
+          OUT
+        </span>
+        <span className="mt-1 text-sm font-semibold leading-none text-white/85">
+          {scoreTotals.out ?? "—"}
+        </span>
+      </div>
+
+      <div className="row-span-2 flex min-h-[96px] flex-col items-center justify-center border-l border-white/10 px-1 text-center">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60 sm:text-[11px]">
+          Tot
+        </span>
+        <span className="mt-2 text-base font-semibold text-white/85 sm:text-lg">
+          {typeof total === "number" ? total : "—"}
+        </span>
+      </div>
+
+      {BACK_NINE_SCORECARD.map((hole) => (
+        <div
+          key={`back-label-${players[0]}-${hole}`}
+          className="flex h-[48px] min-w-0 flex-col items-center justify-center px-0 text-center"
+        >
+          <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
+            {hole}
+          </span>
+          <span className="mt-1 text-sm font-semibold leading-none text-white/85">
+            {scores[hole - 1] ?? "—"}
+          </span>
+        </div>
+      ))}
+
+      <div className="flex h-[48px] min-w-0 flex-col items-center justify-center border-l border-white/10 px-0 text-center">
+        <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
+          IN
+        </span>
+        <span className="mt-1 text-sm font-semibold leading-none text-white/85">
+          {scoreTotals.in ?? "—"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function Scorecard({
   title,
   left,
@@ -199,8 +340,6 @@ function Scorecard({
   playerNames: Record<string, string>;
   score: MatchHoleScore;
 }) {
-  const frontNine = Array.from({ length: 9 }, (_, i) => i + 1);
-  const backNine = Array.from({ length: 9 }, (_, i) => i + 10);
   const rowTeams = [
     [getPlayerName(playerNames, left[0]), getPlayerName(playerNames, left[1])],
     [getPlayerName(playerNames, right[0]), getPlayerName(playerNames, right[1])],
@@ -210,89 +349,6 @@ function Scorecard({
   const rightTotals = calculateScoreTotals(score.right);
   const totals = [leftTotals.total, rightTotals.total] as const;
   const hasScore = typeof leftTotals.total === "number" && typeof rightTotals.total === "number";
-
-  const ScoreStrip = ({
-    players,
-    scores,
-    total,
-    showTopBorder,
-  }: {
-    players: readonly [string, string];
-    scores: (number | null)[];
-    total: number | null;
-    showTopBorder?: boolean;
-  }) => {
-    const scoreTotals = calculateScoreTotals(scores);
-
-    return (
-      <div
-        className={
-          "grid grid-cols-[92px_repeat(10,minmax(0,1fr))_52px] overflow-hidden sm:grid-cols-[108px_repeat(10,minmax(0,1fr))_58px] " +
-          (showTopBorder ? "border-t border-white/10" : "")
-        }
-      >
-        <div className="row-span-2 flex min-h-[96px] flex-col justify-center border-r border-white/10 px-1.5 py-3 text-[10px] font-semibold leading-5 text-white/85 sm:px-2 sm:text-[11px]">
-          <span className="truncate">{players[0]}</span>
-          <span className="truncate text-white/65">{players[1]}</span>
-        </div>
-
-        {frontNine.map((hole) => (
-          <div
-            key={`front-label-${players[0]}-${hole}`}
-            className="flex h-[48px] min-w-0 flex-col items-center justify-center border-b border-white/10 bg-white/[0.05] px-0 text-center"
-          >
-            <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
-              {hole}
-            </span>
-            <span className="mt-1 text-sm font-semibold leading-none text-white/85">
-              {scores[hole - 1] ?? "—"}
-            </span>
-          </div>
-        ))}
-
-        <div className="flex h-[48px] min-w-0 flex-col items-center justify-center border-b border-l border-white/10 bg-white/[0.05] px-0 text-center">
-          <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
-            OUT
-          </span>
-          <span className="mt-1 text-sm font-semibold leading-none text-white/85">
-            {scoreTotals.out ?? "—"}
-          </span>
-        </div>
-
-        <div className="row-span-2 flex min-h-[96px] flex-col items-center justify-center border-l border-white/10 px-1 text-center">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60 sm:text-[11px]">
-            Tot
-          </span>
-          <span className="mt-2 text-base font-semibold text-white/85 sm:text-lg">
-            {typeof total === "number" ? total : "—"}
-          </span>
-        </div>
-
-        {backNine.map((hole) => (
-          <div
-            key={`back-label-${players[0]}-${hole}`}
-            className="flex h-[48px] min-w-0 flex-col items-center justify-center px-0 text-center"
-          >
-            <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
-              {hole}
-            </span>
-            <span className="mt-1 text-sm font-semibold leading-none text-white/85">
-              {scores[hole - 1] ?? "—"}
-            </span>
-          </div>
-        ))}
-
-        <div className="flex h-[48px] min-w-0 flex-col items-center justify-center border-l border-white/10 px-0 text-center">
-          <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
-            IN
-          </span>
-          <span className="mt-1 text-sm font-semibold leading-none text-white/85">
-            {scoreTotals.in ?? "—"}
-          </span>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur">
@@ -389,6 +445,15 @@ export default function Home() {
                 ))}
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className="flex flex-col gap-4">
+          <SectionTitle title="Captains" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {TEAM_IDS.map((team) => (
+              <CaptainCard key={team} team={team} captain={state.captains[team]} />
+            ))}
           </div>
         </section>
 

@@ -18,7 +18,13 @@ export type MatchHoleScore = {
 
 export type MatchScores = Record<RoundLabel, Record<number, MatchHoleScore>>;
 
+export type CaptainInfo = {
+  name: string;
+  imageUrl: string;
+};
+
 export type LeagueState = {
+  captains: Record<TeamId, CaptainInfo>;
   playerNames: Record<string, string>;
   matchScores: MatchScores;
 };
@@ -145,6 +151,13 @@ export const DEFAULT_PLAYER_NAMES: Record<string, string> = {
   D4: "Logan Martin",
 };
 
+export const DEFAULT_CAPTAINS: Record<TeamId, CaptainInfo> = {
+  A: { name: "Captain A", imageUrl: "" },
+  B: { name: "Captain B", imageUrl: "" },
+  C: { name: "Captain C", imageUrl: "" },
+  D: { name: "Captain D", imageUrl: "" },
+};
+
 function createEmptyHoleScores(): HoleScores {
   return Array.from({ length: 18 }, () => null);
 }
@@ -191,6 +204,12 @@ function cloneMatchScores(source: MatchScores): MatchScores {
 
 export function getDefaultLeagueState(): LeagueState {
   return {
+    captains: {
+      A: { ...DEFAULT_CAPTAINS.A },
+      B: { ...DEFAULT_CAPTAINS.B },
+      C: { ...DEFAULT_CAPTAINS.C },
+      D: { ...DEFAULT_CAPTAINS.D },
+    },
     playerNames: { ...DEFAULT_PLAYER_NAMES },
     matchScores: cloneMatchScores(DEFAULT_MATCH_SCORES),
   };
@@ -209,6 +228,19 @@ function sanitizeHoleScores(raw: unknown): HoleScores {
   });
 }
 
+function sanitizeCaptainInfo(raw: unknown, fallback: CaptainInfo): CaptainInfo {
+  if (!raw || typeof raw !== "object") {
+    return { ...fallback };
+  }
+
+  const maybe = raw as Partial<CaptainInfo>;
+
+  return {
+    name: typeof maybe.name === "string" ? maybe.name : fallback.name,
+    imageUrl: typeof maybe.imageUrl === "string" ? maybe.imageUrl : fallback.imageUrl,
+  };
+}
+
 function sanitizeLeagueState(raw: unknown): LeagueState {
   const defaults = getDefaultLeagueState();
 
@@ -217,6 +249,12 @@ function sanitizeLeagueState(raw: unknown): LeagueState {
   }
 
   const maybe = raw as Partial<LeagueState>;
+  const captains: Record<TeamId, CaptainInfo> = {
+    A: sanitizeCaptainInfo(maybe.captains?.A, defaults.captains.A),
+    B: sanitizeCaptainInfo(maybe.captains?.B, defaults.captains.B),
+    C: sanitizeCaptainInfo(maybe.captains?.C, defaults.captains.C),
+    D: sanitizeCaptainInfo(maybe.captains?.D, defaults.captains.D),
+  };
   const playerNames: Record<string, string> = { ...defaults.playerNames };
 
   if (maybe.playerNames && typeof maybe.playerNames === "object") {
@@ -240,6 +278,7 @@ function sanitizeLeagueState(raw: unknown): LeagueState {
   }
 
   return {
+    captains,
     playerNames,
     matchScores,
   };
@@ -368,11 +407,10 @@ export function useLeagueState() {
 
 export function useAdminAuth() {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => Boolean(auth));
 
   useEffect(() => {
     if (!auth) {
-      setLoading(false);
       return;
     }
 
