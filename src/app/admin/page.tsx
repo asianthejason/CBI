@@ -21,7 +21,6 @@ import {
   getRoundSchedule,
   getTeamPlayerLabels,
   TEAM_IDS,
-  TEAM_SLOT_LABELS,
   type CaptainInfo,
   type LeagueState,
   type RoundLabel,
@@ -723,10 +722,10 @@ export default function AdminPage() {
                       </div>
 
                       <div className="relative space-y-3">
-                        {labels.map((label, index) => (
+                        {labels.map((label) => (
                           <label key={label} className="block">
                             <div className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">
-                              {TEAM_SLOT_LABELS[index]}
+                              {label}
                             </div>
                             <input
                               value={draftState.playerNames[label] ?? ""}

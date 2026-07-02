@@ -5,7 +5,6 @@ import { type ReactNode, useEffect, useMemo, useState } from "react";
 import {
   ROUND_LABELS,
   TEAM_IDS,
-  TEAM_SLOT_LABELS,
   calculateScoreTotals,
   getPlayerName,
   getRoundSchedule,
@@ -153,8 +152,8 @@ function TeamTable({
   playerNames: Record<string, string>;
 }) {
   const labels = getTeamPlayerLabels(team);
-  const rows: Array<[string, string]> = labels.map((label, index) => [
-    TEAM_SLOT_LABELS[index],
+  const rows: Array<[string, string]> = labels.map((label) => [
+    label,
     getPlayerName(playerNames, label),
   ]);
 
