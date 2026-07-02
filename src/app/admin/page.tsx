@@ -275,7 +275,7 @@ function ScoreboardRow({
             />
           ))}
           <div className="flex flex-col items-center justify-center border-l border-white/10 px-1 py-1.5 text-center sm:px-1.5 sm:py-2">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">OUT</div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">O</div>
             <div className="mt-2 text-base font-semibold text-white/90 sm:text-lg">
               <ScoreValue value={totals.out} />
             </div>
@@ -292,7 +292,7 @@ function ScoreboardRow({
             />
           ))}
           <div className="flex flex-col items-center justify-center border-l border-white/10 px-1 py-1.5 text-center sm:px-1.5 sm:py-2">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">IN</div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">I</div>
             <div className="mt-2 text-base font-semibold text-white/90 sm:text-lg">
               <ScoreValue value={totals.in} />
             </div>

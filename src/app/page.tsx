@@ -283,7 +283,7 @@ function ScoreStrip({
 
       <div className="flex h-[48px] min-w-0 flex-col items-center justify-center border-b border-l border-white/10 bg-white/[0.05] px-0 text-center">
         <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
-          OUT
+          O
         </span>
         <span className="mt-1 text-sm font-semibold leading-none text-white/85">
           {scoreTotals.out ?? "—"}
@@ -315,7 +315,7 @@ function ScoreStrip({
 
       <div className="flex h-[48px] min-w-0 flex-col items-center justify-center border-l border-white/10 px-0 text-center">
         <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
-          IN
+          I
         </span>
         <span className="mt-1 text-sm font-semibold leading-none text-white/85">
           {scoreTotals.in ?? "—"}
