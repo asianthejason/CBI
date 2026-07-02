@@ -1,17 +1,18 @@
-# CBI captain photo upload with Supabase Storage
+# CBI Save All Buttons + Supabase captain images
 
-This replacement package moves the captain image file uploads away from Firebase Storage and into Supabase Storage.
+This package keeps the Supabase captain image upload system and removes the admin page autosave behavior.
 
-Your app still uses Firebase for:
+Every save button now does the exact same thing: it saves the entire admin draft to Firestore.
 
-- Firebase Auth admin login
-- Firestore live league data
-- team names
-- scores
-- captain names
-- the saved captain image URL/path
+That means any one of the repeated **Save All Changes** buttons will save:
 
-Supabase is used only for the actual captain image files.
+```txt
+captains
+team names
+match scores
+```
+
+The buttons are repeated at the end of different sections only for convenience, so you do not have to scroll all the way up or down.
 
 ## Files to replace or add
 
@@ -27,29 +28,24 @@ src/app/admin/page.tsx
 firestore.rules
 ```
 
-Add this new file:
+Add this file if it is not already in your project:
 
 ```txt
 src/app/api/captain-image/upload/route.ts
 ```
 
-## Supabase setup
+## What changed in this version
 
-1. Create a free Supabase project.
-2. Go to Storage.
-3. Create a bucket named:
+- Removed the autosave timer from the admin page.
+- Typing in captain names, team names, and scores now only changes the draft on the admin page.
+- The live homepage updates only after pressing a save button.
+- All section save buttons are now labeled **Save All Changes**.
+- Every **Save All Changes** button saves the full draft, not just the section it appears in.
+- Captain images still upload to Supabase immediately after drag/drop or click upload, but the image URL is only saved to Firestore after pressing any **Save All Changes** button.
 
-```txt
-captain-images
-```
+## Vercel environment variables still needed
 
-4. Make the bucket public.
-
-The bucket only stores public captain photos for the golf trip website. The upload route uses your private Supabase service role key on the server, so public visitors cannot upload from the homepage.
-
-## Vercel environment variables
-
-Add these to Vercel > Project Settings > Environment Variables:
+Keep your Firebase variables and add these Supabase variables:
 
 ```txt
 SUPABASE_URL=https://YOUR-PROJECT-REF.supabase.co
@@ -58,72 +54,14 @@ SUPABASE_STORAGE_BUCKET=captain-images
 ADMIN_EMAIL=admin@cbi.com
 ```
 
-Important:
+Redeploy after changing files or environment variables.
+
+## Firestore rules
+
+Paste `firestore.rules` into:
 
 ```txt
-SUPABASE_SERVICE_ROLE_KEY must NOT start with NEXT_PUBLIC_.
+Firebase Console → Cloud Firestore → Rules
 ```
 
-The service role key must stay server-only.
-
-Keep your existing Firebase environment variables too:
-
-```txt
-NEXT_PUBLIC_FIREBASE_API_KEY=...
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=...
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
-NEXT_PUBLIC_FIREBASE_APP_ID=...
-```
-
-You no longer need this variable for this website:
-
-```txt
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-```
-
-## Firebase rules
-
-Paste `firestore.rules` into Firebase Console > Cloud Firestore > Rules.
-
-Do not paste Supabase or Storage rules into the Firestore rules page.
-
-## How uploading works
-
-```txt
-Admin page drag/drop image
-→ browser sends image to /api/captain-image/upload
-→ API route verifies the Firebase admin login token
-→ API route uploads the image to Supabase Storage using the private service role key
-→ Supabase public image URL is returned
-→ admin page saves imageUrl and imagePath into Firestore
-→ homepage displays the image from Supabase
-```
-
-## Uploaded file paths
-
-Images are saved in Supabase Storage like this:
-
-```txt
-captain-images/captains/cbi-2026/A/...
-captain-images/captains/cbi-2026/B/...
-captain-images/captains/cbi-2026/C/...
-captain-images/captains/cbi-2026/D/...
-```
-
-## Local development
-
-For local testing, add these same variables to `.env.local`.
-
-The uploaded project originally had `env.local` without the leading dot. Next.js expects:
-
-```txt
-.env.local
-```
-
-## Notes
-
-- Firestore is still the database for names and scores.
-- Supabase is now the file storage for captain photos.
-- The uploaded captain image limit is 8 MB.
-- Removed Firebase Storage from the app, so you can stay on Firebase Spark for Auth/Firestore.
+This app no longer needs Firebase Storage rules because captain images are stored in Supabase Storage.

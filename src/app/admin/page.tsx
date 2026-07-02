@@ -48,6 +48,31 @@ function SectionTitle({ title, subtitle }: { title: string; subtitle?: string })
   );
 }
 
+function SectionSaveButton({
+  label,
+  disabled,
+  isSaving,
+  onClick,
+}: {
+  label: string;
+  disabled: boolean;
+  isSaving: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <div className="flex justify-end">
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled || isSaving}
+        className="rounded-full bg-emerald-400 px-5 py-2.5 text-sm font-semibold text-black shadow-[0_10px_30px_-18px_rgba(52,211,153,0.9)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {isSaving ? "Saving..." : label}
+      </button>
+    </div>
+  );
+}
+
 function getInitials(name: string, fallback: string) {
   const initials = name
     .trim()
@@ -292,7 +317,8 @@ export default function AdminPage() {
   const [activeRound, setActiveRound] = useState<RoundLabel>("Round 1");
   const [draftState, setDraftState] = useState<LeagueState>(getDefaultLeagueState());
   const [isDirty, setIsDirty] = useState(false);
-  const [saveMessage, setSaveMessage] = useState("Live sync ready");
+  const [saveMessage, setSaveMessage] = useState("Ready to edit");
+  const [isSaving, setIsSaving] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [authMessage, setAuthMessage] = useState("Email/password sign-in ready");
@@ -309,25 +335,6 @@ export default function AdminPage() {
       setDraftState(liveState);
     }
   }, [isDirty, liveState]);
-
-  useEffect(() => {
-    if (!user || !configured || !isDirty) {
-      return;
-    }
-
-    setSaveMessage("Saving...");
-    const timer = window.setTimeout(async () => {
-      try {
-        await saveState(draftState);
-        setIsDirty(false);
-        setSaveMessage("All changes saved");
-      } catch (error) {
-        setSaveMessage(error instanceof Error ? error.message : "Save failed");
-      }
-    }, 450);
-
-    return () => window.clearTimeout(timer);
-  }, [configured, draftState, isDirty, saveState, user]);
 
   useEffect(() => {
     if (liveError) {
@@ -349,7 +356,7 @@ export default function AdminPage() {
       },
     }));
     setIsDirty(true);
-    setSaveMessage("Unsaved changes");
+    setSaveMessage("Unsaved changes. Click any Save All Changes button.");
   };
 
   const updateCaptainInfo = (team: TeamId, field: keyof CaptainInfo, value: string) => {
@@ -411,7 +418,7 @@ export default function AdminPage() {
       }
 
       updateCaptainInfoValues(team, { imageUrl: result.imageUrl, imagePath: result.imagePath });
-      setCaptainUploadMessage(team, "Photo uploaded. Saving to live site...");
+      setCaptainUploadMessage(team, "Photo uploaded. Click any Save All Changes button to update the live site.");
     } catch (error) {
       setCaptainUploadMessage(team, error instanceof Error ? error.message : "Photo upload failed.");
     } finally {
@@ -422,9 +429,9 @@ export default function AdminPage() {
   const handleRemoveCaptainImage = async (team: TeamId) => {
     try {
       setCaptainUploading(team, true);
-      setCaptainUploadMessage(team, "Removing photo from the live card...");
+      setCaptainUploadMessage(team, "Removing photo from the draft card...");
       updateCaptainInfoValues(team, { imageUrl: "", imagePath: "" });
-      setCaptainUploadMessage(team, "Photo removed from the live card. Saving...");
+      setCaptainUploadMessage(team, "Photo removed. Click any Save All Changes button to update the live site.");
     } catch (error) {
       setCaptainUploadMessage(team, error instanceof Error ? error.message : "Photo removal failed.");
     } finally {
@@ -441,7 +448,7 @@ export default function AdminPage() {
       },
     }));
     setIsDirty(true);
-    setSaveMessage("Unsaved changes");
+    setSaveMessage("Unsaved changes. Click any Save All Changes button.");
   };
 
   const updateHoleScore = (
@@ -473,17 +480,44 @@ export default function AdminPage() {
     });
 
     setIsDirty(true);
-    setSaveMessage("Unsaved changes");
+    setSaveMessage("Unsaved changes. Click any Save All Changes button.");
+  };
+
+  const handleSaveChanges = async () => {
+    if (!user) {
+      setSaveMessage("Sign in before saving.");
+      return;
+    }
+
+    if (!configured) {
+      setSaveMessage("Firebase is not configured.");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      setSaveMessage(`Saving all changes...`);
+      await saveState(draftState);
+      setIsDirty(false);
+      setSaveMessage(`All changes saved to the live site`);
+    } catch (error) {
+      setSaveMessage(error instanceof Error ? error.message : "Save failed");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleReset = async () => {
     try {
+      setIsSaving(true);
       setSaveMessage("Resetting...");
       await resetState();
       setIsDirty(false);
       setSaveMessage("League reset to defaults");
     } catch (error) {
       setSaveMessage(error instanceof Error ? error.message : "Reset failed");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -603,7 +637,7 @@ export default function AdminPage() {
             <section className="flex flex-col gap-4">
               <SectionTitle
                 title="Captains"
-                subtitle="Add the four captain names and drag photos into each card. Photos upload to Supabase. Autosave updates the live homepage."
+                subtitle="Add the four captain names and drag photos into each card. Photos upload to Supabase, then click any Save All Changes button to update the live homepage."
               />
 
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -650,18 +684,26 @@ export default function AdminPage() {
                   );
                 })}
               </div>
+
+              <SectionSaveButton
+                label="Save All Changes"
+                disabled={!isDirty || !configured || Boolean(liveError)}
+                isSaving={isSaving}
+                onClick={() => void handleSaveChanges()}
+              />
             </section>
 
             <section className="flex flex-col gap-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <SectionTitle
                   title="Team Names"
-                  subtitle="Edit each roster slot. Autosave updates the live homepage for everyone."
+                  subtitle="Edit each roster slot, then click any Save All Changes button to update the live homepage for everyone."
                 />
                 <button
                   type="button"
                   onClick={() => void handleReset()}
-                  className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/85 transition hover:bg-white/8"
+                  disabled={isSaving}
+                  className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white/85 transition hover:bg-white/8 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Reset All
                 </button>
@@ -705,6 +747,13 @@ export default function AdminPage() {
                   );
                 })}
               </div>
+
+              <SectionSaveButton
+                label="Save All Changes"
+                disabled={!isDirty || !configured || Boolean(liveError)}
+                isSaving={isSaving}
+                onClick={() => void handleSaveChanges()}
+              />
             </section>
 
             <section className="flex flex-col gap-4">
@@ -778,6 +827,13 @@ export default function AdminPage() {
                   </section>
                 ))}
               </div>
+
+              <SectionSaveButton
+                label="Save All Changes"
+                disabled={!isDirty || !configured || Boolean(liveError)}
+                isSaving={isSaving}
+                onClick={() => void handleSaveChanges()}
+              />
             </section>
           </>
         )}
