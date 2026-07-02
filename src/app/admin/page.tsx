@@ -233,11 +233,11 @@ function HoleInput({
     <div className="flex min-w-0 flex-col items-center gap-1 px-0.5 py-1.5 text-center sm:px-1 sm:py-2">
       <div className="text-[10px] font-semibold text-white/55 sm:text-[11px]">{hole}</div>
       <input
-        type="number"
-        min="1"
+        type="text"
         inputMode="numeric"
+        pattern="[0-9]*"
         value={value ?? ""}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(event) => onChange(event.target.value.replace(/\D/g, ""))}
         className="h-8 w-full min-w-0 rounded-md border border-white/10 bg-black/25 px-0.5 text-center text-xs font-semibold text-white outline-none transition placeholder:text-white/20 focus:border-emerald-300/40 sm:h-9 sm:rounded-lg sm:text-sm"
         placeholder="—"
       />
