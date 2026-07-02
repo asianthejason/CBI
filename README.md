@@ -1,36 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Captain image upload replacement files
 
-## Getting Started
+Replace these files in your project:
 
-First, run the development server:
+- `src/app/firebase.ts`
+- `src/app/lib/firebase.ts`
+- `src/app/league-store.ts`
+- `src/app/page.tsx`
+- `src/app/admin/page.tsx`
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Also add the included `storage.rules` to Firebase Storage rules.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## What this adds
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Captain cards on the admin page now let you drag/drop an image or click to upload.
+- Images upload to Firebase Storage at `captains/cbi-2026/<captain-slot>/...`.
+- The Storage download URL and Storage path are saved in Firestore under `/leagues/cbi-2026`.
+- The homepage uses the saved URL to display the captain photo.
+- The old manual Photo URL input is removed.
+- A Remove Photo button clears the Firestore image fields and attempts to delete the Storage file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Firebase setup needed
 
-## Learn More
+1. Go to Firebase Console.
+2. Open your project.
+3. Enable Storage.
+4. Paste/deploy the included `storage.rules`.
+5. Make sure your deployed environment variables include `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`.
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Your current Firestore rules can stay the same.

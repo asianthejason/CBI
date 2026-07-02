@@ -1,7 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from "react";
+import {
+  type ChangeEvent,
+  type DragEvent,
+  type FormEvent,
+  type ReactNode,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { storage } from "../lib/firebase";
 import {
   BACK_NINE,
   FRONT_NINE,
@@ -51,33 +61,146 @@ function getInitials(name: string, fallback: string) {
   return initials || fallback;
 }
 
-function CaptainPhotoPreview({
+const MAX_CAPTAIN_IMAGE_SIZE_BYTES = 8 * 1024 * 1024;
+
+function getCaptainUploadMap(defaultValue = ""): Record<TeamId, string> {
+  return { A: defaultValue, B: defaultValue, C: defaultValue, D: defaultValue };
+}
+
+function getCaptainUploadingMap(defaultValue = false): Record<TeamId, boolean> {
+  return { A: defaultValue, B: defaultValue, C: defaultValue, D: defaultValue };
+}
+
+function getSafeStorageFileName(fileName: string) {
+  const trimmed = fileName.trim() || "captain-photo";
+  const [namePart, ...extensionParts] = trimmed.split(".");
+  const extension = extensionParts.length ? `.${extensionParts.pop()?.toLowerCase()}` : "";
+  const safeName = namePart
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+
+  return `${safeName || "captain-photo"}${extension}`;
+}
+
+function CaptainPhotoUploader({
   team,
   captain,
   captainNumber,
+  disabled,
+  isUploading,
+  message,
+  onUpload,
+  onRemove,
 }: {
   team: TeamId;
   captain: CaptainInfo;
   captainNumber: number;
+  disabled: boolean;
+  isUploading: boolean;
+  message: string;
+  onUpload: (file: File) => Promise<void>;
+  onRemove: () => Promise<void>;
 }) {
+  const [isDragging, setIsDragging] = useState(false);
   const displayName = captain.name.trim() || `Captain ${captainNumber}`;
   const imageUrl = captain.imageUrl.trim();
+  const inputId = `captain-photo-${team}`;
+
+  const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0];
+    if (file) {
+      void onUpload(file);
+    }
+    event.currentTarget.value = "";
+  };
+
+  const handleDrop = (event: DragEvent<HTMLLabelElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
+
+    const file = event.dataTransfer.files?.[0];
+    if (file && !disabled && !isUploading) {
+      void onUpload(file);
+    }
+  };
 
   return (
-    <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black/25 shadow-inner">
-      {imageUrl ? (
-        <div
-          aria-label={`${displayName} captain preview`}
-          className="h-full w-full bg-cover bg-center"
-          role="img"
-          style={{ backgroundImage: `url(${JSON.stringify(imageUrl)})` }}
-        />
-      ) : (
-        <div className="flex h-full w-full flex-col items-center justify-center bg-white/[0.04] text-center">
-          <span className="text-2xl font-semibold text-white/85">{getInitials(displayName, team)}</span>
-          <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/35">Photo</span>
+    <div className="space-y-2">
+      <input
+        id={inputId}
+        type="file"
+        accept="image/*"
+        className="sr-only"
+        disabled={disabled || isUploading}
+        onChange={handleFileSelect}
+      />
+
+      <label
+        htmlFor={inputId}
+        onDragEnter={(event) => {
+          event.preventDefault();
+          if (!disabled && !isUploading) {
+            setIsDragging(true);
+          }
+        }}
+        onDragOver={(event) => {
+          event.preventDefault();
+          if (!disabled && !isUploading) {
+            setIsDragging(true);
+          }
+        }}
+        onDragLeave={(event) => {
+          event.preventDefault();
+          setIsDragging(false);
+        }}
+        onDrop={handleDrop}
+        className={
+          "flex min-h-36 cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-4 text-center transition " +
+          (disabled || isUploading
+            ? "border-white/10 bg-black/15 opacity-70"
+            : isDragging
+              ? "border-emerald-300/80 bg-emerald-300/10"
+              : "border-white/15 bg-black/18 hover:border-emerald-300/45 hover:bg-emerald-300/5")
+        }
+      >
+        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black/25 shadow-inner">
+          {imageUrl ? (
+            <div
+              aria-label={`${displayName} captain preview`}
+              className="h-full w-full bg-cover bg-center"
+              role="img"
+              style={{ backgroundImage: `url(${JSON.stringify(imageUrl)})` }}
+            />
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center bg-white/[0.04] text-center">
+              <span className="text-2xl font-semibold text-white/85">{getInitials(displayName, team)}</span>
+              <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/35">Photo</span>
+            </div>
+          )}
         </div>
-      )}
+
+        <div className="space-y-1">
+          <div className="text-sm font-semibold text-white">
+            {isUploading ? "Uploading..." : imageUrl ? "Replace photo" : "Drop photo here"}
+          </div>
+          <div className="text-xs leading-5 text-white/55">or click to choose an image</div>
+        </div>
+      </label>
+
+      {message ? <p className="text-xs leading-5 text-white/60">{message}</p> : null}
+
+      {imageUrl ? (
+        <button
+          type="button"
+          onClick={() => void onRemove()}
+          disabled={disabled || isUploading}
+          className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/75 transition hover:bg-white/8 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Remove Photo
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -188,6 +311,12 @@ export default function AdminPage() {
   const [password, setPassword] = useState("");
   const [authMessage, setAuthMessage] = useState("Email/password sign-in ready");
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [captainUploadMessages, setCaptainUploadMessages] = useState<Record<TeamId, string>>(() =>
+    getCaptainUploadMap(),
+  );
+  const [uploadingCaptains, setUploadingCaptains] = useState<Record<TeamId, boolean>>(() =>
+    getCaptainUploadingMap(),
+  );
 
   useEffect(() => {
     if (!isDirty) {
@@ -222,19 +351,111 @@ export default function AdminPage() {
 
   const activeSchedule = useMemo(() => getRoundSchedule(activeRound), [activeRound]);
 
-  const updateCaptainInfo = (team: TeamId, field: keyof CaptainInfo, value: string) => {
+  const updateCaptainInfoValues = (team: TeamId, values: Partial<CaptainInfo>) => {
     setDraftState((current) => ({
       ...current,
       captains: {
         ...current.captains,
         [team]: {
           ...current.captains[team],
-          [field]: value,
+          ...values,
         },
       },
     }));
     setIsDirty(true);
     setSaveMessage("Unsaved changes");
+  };
+
+  const updateCaptainInfo = (team: TeamId, field: keyof CaptainInfo, value: string) => {
+    updateCaptainInfoValues(team, { [field]: value });
+  };
+
+  const setCaptainUploadMessage = (team: TeamId, message: string) => {
+    setCaptainUploadMessages((current) => ({ ...current, [team]: message }));
+  };
+
+  const setCaptainUploading = (team: TeamId, isUploading: boolean) => {
+    setUploadingCaptains((current) => ({ ...current, [team]: isUploading }));
+  };
+
+  const handleCaptainImageUpload = async (team: TeamId, file: File) => {
+    if (!user) {
+      setCaptainUploadMessage(team, "Sign in first to upload captain photos.");
+      return;
+    }
+
+    if (!configured || !storage) {
+      setCaptainUploadMessage(team, "Firebase Storage is not configured yet.");
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setCaptainUploadMessage(team, "Choose an image file, such as JPG, PNG, or WebP.");
+      return;
+    }
+
+    if (file.size > MAX_CAPTAIN_IMAGE_SIZE_BYTES) {
+      setCaptainUploadMessage(team, "Image is too large. Use an image under 8 MB.");
+      return;
+    }
+
+    const previousImagePath = draftState.captains[team]?.imagePath;
+    const fileName = getSafeStorageFileName(file.name);
+    const imagePath = `captains/cbi-2026/${team}/${Date.now()}-${fileName}`;
+
+    try {
+      setCaptainUploading(team, true);
+      setCaptainUploadMessage(team, "Uploading to Firebase Storage...");
+
+      const imageRef = ref(storage, imagePath);
+      await uploadBytes(imageRef, file, {
+        contentType: file.type || undefined,
+        customMetadata: {
+          leagueId: "cbi-2026",
+          captainSlot: team,
+        },
+      });
+
+      const imageUrl = await getDownloadURL(imageRef);
+      updateCaptainInfoValues(team, { imageUrl, imagePath });
+      setCaptainUploadMessage(team, "Photo uploaded. Saving to live site...");
+
+      if (previousImagePath && previousImagePath !== imagePath) {
+        try {
+          await deleteObject(ref(storage, previousImagePath));
+        } catch {
+          // If the old file cannot be removed, keep going. The new image has already uploaded successfully.
+        }
+      }
+    } catch (error) {
+      setCaptainUploadMessage(team, error instanceof Error ? error.message : "Photo upload failed.");
+    } finally {
+      setCaptainUploading(team, false);
+    }
+  };
+
+  const handleRemoveCaptainImage = async (team: TeamId) => {
+    const captain = draftState.captains[team];
+
+    try {
+      setCaptainUploading(team, true);
+      setCaptainUploadMessage(team, "Removing photo...");
+
+      if (storage && captain.imagePath) {
+        try {
+          await deleteObject(ref(storage, captain.imagePath));
+        } catch {
+          // The Firestore image link will still be cleared even if the old Storage file is already missing.
+        }
+      }
+
+      updateCaptainInfoValues(team, { imageUrl: "", imagePath: "" });
+      setCaptainUploadMessage(team, "Photo removed. Saving to live site...");
+    } catch (error) {
+      setCaptainUploadMessage(team, error instanceof Error ? error.message : "Photo removal failed.");
+    } finally {
+      setCaptainUploading(team, false);
+    }
   };
 
   const updatePlayerName = (label: string, value: string) => {
@@ -408,7 +629,7 @@ export default function AdminPage() {
             <section className="flex flex-col gap-4">
               <SectionTitle
                 title="Captains"
-                subtitle="Add the four captain names and photo URLs. Autosave updates the live homepage."
+                subtitle="Add the four captain names and drag photos into each card. Autosave updates the live homepage."
               />
 
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -425,14 +646,20 @@ export default function AdminPage() {
                         <div className="h-full w-full bg-[radial-gradient(circle_at_30%_20%,rgba(34,197,94,0.18),transparent_55%),radial-gradient(circle_at_70%_80%,rgba(16,185,129,0.14),transparent_55%)]" />
                       </div>
 
-                      <div className="relative flex items-center gap-3 pb-4">
-                        <CaptainPhotoPreview team={team} captain={captain} captainNumber={captainNumber} />
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-semibold text-white">Captain {captainNumber}</div>
-                        </div>
-                      </div>
+                      <div className="relative space-y-4">
+                        <div className="text-sm font-semibold text-white">Captain {captainNumber}</div>
 
-                      <div className="relative space-y-3">
+                        <CaptainPhotoUploader
+                          team={team}
+                          captain={captain}
+                          captainNumber={captainNumber}
+                          disabled={!user}
+                          isUploading={uploadingCaptains[team]}
+                          message={captainUploadMessages[team]}
+                          onUpload={(file) => handleCaptainImageUpload(team, file)}
+                          onRemove={() => handleRemoveCaptainImage(team)}
+                        />
+
                         <label className="block">
                           <div className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">
                             Captain Name
@@ -441,18 +668,6 @@ export default function AdminPage() {
                             value={captain.name}
                             onChange={(event) => updateCaptainInfo(team, "name", event.target.value)}
                             placeholder={`Enter Captain ${captainNumber}`}
-                            className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-emerald-300/40"
-                          />
-                        </label>
-
-                        <label className="block">
-                          <div className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">
-                            Photo URL
-                          </div>
-                          <input
-                            value={captain.imageUrl}
-                            onChange={(event) => updateCaptainInfo(team, "imageUrl", event.target.value)}
-                            placeholder="https://example.com/photo.jpg"
                             className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-emerald-300/40"
                           />
                         </label>

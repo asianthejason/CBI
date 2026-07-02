@@ -21,6 +21,7 @@ export type MatchScores = Record<RoundLabel, Record<number, MatchHoleScore>>;
 export type CaptainInfo = {
   name: string;
   imageUrl: string;
+  imagePath: string;
 };
 
 export type LeagueState = {
@@ -152,10 +153,10 @@ export const DEFAULT_PLAYER_NAMES: Record<string, string> = {
 };
 
 export const DEFAULT_CAPTAINS: Record<TeamId, CaptainInfo> = {
-  A: { name: "Captain 1", imageUrl: "" },
-  B: { name: "Captain 2", imageUrl: "" },
-  C: { name: "Captain 3", imageUrl: "" },
-  D: { name: "Captain 4", imageUrl: "" },
+  A: { name: "Captain 1", imageUrl: "", imagePath: "" },
+  B: { name: "Captain 2", imageUrl: "", imagePath: "" },
+  C: { name: "Captain 3", imageUrl: "", imagePath: "" },
+  D: { name: "Captain 4", imageUrl: "", imagePath: "" },
 };
 
 function createEmptyHoleScores(): HoleScores {
@@ -238,6 +239,7 @@ function sanitizeCaptainInfo(raw: unknown, fallback: CaptainInfo): CaptainInfo {
   return {
     name: typeof maybe.name === "string" ? maybe.name : fallback.name,
     imageUrl: typeof maybe.imageUrl === "string" ? maybe.imageUrl : fallback.imageUrl,
+    imagePath: typeof maybe.imagePath === "string" ? maybe.imagePath : fallback.imagePath,
   };
 }
 
