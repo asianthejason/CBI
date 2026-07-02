@@ -635,10 +635,7 @@ export default function AdminPage() {
             ) : null}
 
             <section className="flex flex-col gap-4">
-              <SectionTitle
-                title="Captains"
-                subtitle="Add the four captain names and drag photos into each card. Photos upload to Supabase, then click any Save All Changes button to update the live homepage."
-              />
+              <SectionTitle title="Captains" />
 
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 {TEAM_IDS.map((team: TeamId, index) => {
@@ -695,10 +692,7 @@ export default function AdminPage() {
 
             <section className="flex flex-col gap-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <SectionTitle
-                  title="Team Names"
-                  subtitle="Edit each roster slot, then click any Save All Changes button to update the live homepage for everyone."
-                />
+                <SectionTitle title="Team Names" />
                 <button
                   type="button"
                   onClick={() => void handleReset()}
