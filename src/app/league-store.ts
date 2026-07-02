@@ -134,22 +134,22 @@ export const ROUND_SCHEDULES: RoundSchedule[] = [
 ];
 
 export const DEFAULT_PLAYER_NAMES: Record<string, string> = {
-  A1: "Jason Huang",
-  A2: "Mason Lee",
-  A3: "Noah Kim",
-  A4: "Ethan Park",
-  B1: "Liam Chen",
-  B2: "Owen Tran",
-  B3: "Lucas Wong",
-  B4: "Daniel Yu",
-  C1: "Ryan Patel",
-  C2: "Aiden Smith",
-  C3: "Caleb Nguyen",
-  C4: "Jack Wilson",
-  D1: "Ben Thompson",
-  D2: "Cole Anderson",
-  D3: "Tyler Brown",
-  D4: "Logan Martin",
+  A1: "Captain A",
+  A2: "player A1",
+  A3: "player A2",
+  A4: "player A3",
+  B1: "Captain B",
+  B2: "player B1",
+  B3: "player B2",
+  B4: "player B3",
+  C1: "Captain C",
+  C2: "player C1",
+  C3: "player C2",
+  C4: "player C3",
+  D1: "Captain D",
+  D2: "player D1",
+  D3: "player D2",
+  D4: "player D3",
 };
 
 export const DEFAULT_CAPTAINS: Record<TeamId, CaptainInfo> = {

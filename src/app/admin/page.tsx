@@ -10,8 +10,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { deleteObject, getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { storage } from "../lib/firebase";
+import { auth } from "../lib/firebase";
 import {
   BACK_NINE,
   FRONT_NINE,
@@ -69,19 +68,6 @@ function getCaptainUploadMap(defaultValue = ""): Record<TeamId, string> {
 
 function getCaptainUploadingMap(defaultValue = false): Record<TeamId, boolean> {
   return { A: defaultValue, B: defaultValue, C: defaultValue, D: defaultValue };
-}
-
-function getSafeStorageFileName(fileName: string) {
-  const trimmed = fileName.trim() || "captain-photo";
-  const [namePart, ...extensionParts] = trimmed.split(".");
-  const extension = extensionParts.length ? `.${extensionParts.pop()?.toLowerCase()}` : "";
-  const safeName = namePart
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
-
-  return `${safeName || "captain-photo"}${extension}`;
 }
 
 function CaptainPhotoUploader({
@@ -384,8 +370,8 @@ export default function AdminPage() {
       return;
     }
 
-    if (!configured || !storage) {
-      setCaptainUploadMessage(team, "Firebase Storage is not configured yet.");
+    if (!configured || !auth?.currentUser) {
+      setCaptainUploadMessage(team, "Firebase Auth is not ready yet.");
       return;
     }
 
@@ -399,34 +385,33 @@ export default function AdminPage() {
       return;
     }
 
-    const previousImagePath = draftState.captains[team]?.imagePath;
-    const fileName = getSafeStorageFileName(file.name);
-    const imagePath = `captains/cbi-2026/${team}/${Date.now()}-${fileName}`;
-
     try {
       setCaptainUploading(team, true);
-      setCaptainUploadMessage(team, "Uploading to Firebase Storage...");
+      setCaptainUploadMessage(team, "Uploading to Supabase Storage...");
 
-      const imageRef = ref(storage, imagePath);
-      await uploadBytes(imageRef, file, {
-        contentType: file.type || undefined,
-        customMetadata: {
-          leagueId: "cbi-2026",
-          captainSlot: team,
+      const token = await auth.currentUser.getIdToken();
+      const formData = new FormData();
+      formData.append("team", team);
+      formData.append("file", file);
+
+      const response = await fetch("/api/captain-image/upload", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
+        body: formData,
       });
 
-      const imageUrl = await getDownloadURL(imageRef);
-      updateCaptainInfoValues(team, { imageUrl, imagePath });
-      setCaptainUploadMessage(team, "Photo uploaded. Saving to live site...");
+      const result = (await response.json().catch(() => null)) as
+        | { imageUrl?: string; imagePath?: string; error?: string }
+        | null;
 
-      if (previousImagePath && previousImagePath !== imagePath) {
-        try {
-          await deleteObject(ref(storage, previousImagePath));
-        } catch {
-          // If the old file cannot be removed, keep going. The new image has already uploaded successfully.
-        }
+      if (!response.ok || !result?.imageUrl || !result?.imagePath) {
+        throw new Error(result?.error ?? "Photo upload failed.");
       }
+
+      updateCaptainInfoValues(team, { imageUrl: result.imageUrl, imagePath: result.imagePath });
+      setCaptainUploadMessage(team, "Photo uploaded. Saving to live site...");
     } catch (error) {
       setCaptainUploadMessage(team, error instanceof Error ? error.message : "Photo upload failed.");
     } finally {
@@ -435,22 +420,11 @@ export default function AdminPage() {
   };
 
   const handleRemoveCaptainImage = async (team: TeamId) => {
-    const captain = draftState.captains[team];
-
     try {
       setCaptainUploading(team, true);
-      setCaptainUploadMessage(team, "Removing photo...");
-
-      if (storage && captain.imagePath) {
-        try {
-          await deleteObject(ref(storage, captain.imagePath));
-        } catch {
-          // The Firestore image link will still be cleared even if the old Storage file is already missing.
-        }
-      }
-
+      setCaptainUploadMessage(team, "Removing photo from the live card...");
       updateCaptainInfoValues(team, { imageUrl: "", imagePath: "" });
-      setCaptainUploadMessage(team, "Photo removed. Saving to live site...");
+      setCaptainUploadMessage(team, "Photo removed from the live card. Saving...");
     } catch (error) {
       setCaptainUploadMessage(team, error instanceof Error ? error.message : "Photo removal failed.");
     } finally {
@@ -629,7 +603,7 @@ export default function AdminPage() {
             <section className="flex flex-col gap-4">
               <SectionTitle
                 title="Captains"
-                subtitle="Add the four captain names and drag photos into each card. Autosave updates the live homepage."
+                subtitle="Add the four captain names and drag photos into each card. Photos upload to Supabase. Autosave updates the live homepage."
               />
 
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
