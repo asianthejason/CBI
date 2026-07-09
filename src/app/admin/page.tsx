@@ -19,6 +19,7 @@ import {
   getPairLabel,
   getPlayerName,
   getRoundSchedule,
+  getTeamName,
   getTeamPlayerLabels,
   TEAM_IDS,
   type CaptainInfo,
@@ -438,6 +439,18 @@ export default function AdminPage() {
     }
   };
 
+  const updateTeamName = (team: TeamId, value: string) => {
+    setDraftState((current) => ({
+      ...current,
+      teamNames: {
+        ...current.teamNames,
+        [team]: value,
+      },
+    }));
+    setIsDirty(true);
+    setSaveMessage("Unsaved changes. Click any Save All Changes button.");
+  };
+
   const updatePlayerName = (label: string, value: string) => {
     setDraftState((current) => ({
       ...current,
@@ -705,6 +718,8 @@ export default function AdminPage() {
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 {TEAM_IDS.map((team: TeamId) => {
                   const labels = getTeamPlayerLabels(team);
+                  const teamName = draftState.teamNames[team] ?? `Team ${team}`;
+                  const displayTeamName = getTeamName(draftState.teamNames, team);
                   return (
                     <div
                       key={team}
@@ -718,10 +733,24 @@ export default function AdminPage() {
                         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-sm font-semibold text-white">
                           {team}
                         </div>
-                        <div className="text-sm font-semibold text-white">Team {team}</div>
+                        <div className="text-sm font-semibold text-white">{displayTeamName}</div>
                       </div>
 
                       <div className="relative space-y-3">
+                        <label className="block">
+                          <div className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">
+                            Team Name
+                          </div>
+                          <input
+                            value={teamName}
+                            onChange={(event) => updateTeamName(team, event.target.value)}
+                            placeholder={`Enter Team ${team} name`}
+                            className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-emerald-300/40"
+                          />
+                        </label>
+
+                        <div className="h-px bg-white/10" />
+
                         {labels.map((label) => (
                           <label key={label} className="block">
                             <div className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">

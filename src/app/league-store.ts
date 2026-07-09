@@ -26,6 +26,7 @@ export type CaptainInfo = {
 
 export type LeagueState = {
   captains: Record<TeamId, CaptainInfo>;
+  teamNames: Record<TeamId, string>;
   playerNames: Record<string, string>;
   matchScores: MatchScores;
 };
@@ -45,6 +46,12 @@ export type ScoreTotals = {
 export const ROUND_LABELS: RoundLabel[] = ["Round 1", "Round 2", "Round 3"];
 export const TEAM_IDS: TeamId[] = ["A", "B", "C", "D"];
 export const TEAM_SLOT_LABELS = ["C", "1", "2", "3"] as const;
+export const DEFAULT_TEAM_NAMES: Record<TeamId, string> = {
+  A: "Team A",
+  B: "Team B",
+  C: "Team C",
+  D: "Team D",
+};
 export const MATCH_IDS = [1, 2, 3, 4] as const;
 export const FRONT_NINE = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
 export const BACK_NINE = [10, 11, 12, 13, 14, 15, 16, 17, 18] as const;
@@ -211,6 +218,7 @@ export function getDefaultLeagueState(): LeagueState {
       C: { ...DEFAULT_CAPTAINS.C },
       D: { ...DEFAULT_CAPTAINS.D },
     },
+    teamNames: { ...DEFAULT_TEAM_NAMES },
     playerNames: { ...DEFAULT_PLAYER_NAMES },
     matchScores: cloneMatchScores(DEFAULT_MATCH_SCORES),
   };
@@ -257,6 +265,15 @@ function sanitizeLeagueState(raw: unknown): LeagueState {
     C: sanitizeCaptainInfo(maybe.captains?.C, defaults.captains.C),
     D: sanitizeCaptainInfo(maybe.captains?.D, defaults.captains.D),
   };
+  const teamNames: Record<TeamId, string> = { ...defaults.teamNames };
+
+  if (maybe.teamNames && typeof maybe.teamNames === "object") {
+    for (const team of TEAM_IDS) {
+      const value = maybe.teamNames[team];
+      teamNames[team] = typeof value === "string" ? value : defaults.teamNames[team];
+    }
+  }
+
   const playerNames: Record<string, string> = { ...defaults.playerNames };
 
   if (maybe.playerNames && typeof maybe.playerNames === "object") {
@@ -281,9 +298,14 @@ function sanitizeLeagueState(raw: unknown): LeagueState {
 
   return {
     captains,
+    teamNames,
     playerNames,
     matchScores,
   };
+}
+
+export function getTeamName(teamNames: Record<TeamId, string>, team: TeamId) {
+  return teamNames[team]?.trim() || `Team ${team}`;
 }
 
 export function getPlayerName(playerNames: Record<string, string>, label: string) {

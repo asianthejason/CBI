@@ -8,6 +8,7 @@ import {
   calculateScoreTotals,
   getPlayerName,
   getRoundSchedule,
+  getTeamName,
   getTeamPlayerLabels,
   type CaptainInfo,
   type MatchHoleScore,
@@ -146,9 +147,11 @@ function CaptainCard({
 
 function TeamTable({
   team,
+  teamName,
   playerNames,
 }: {
   team: TeamId;
+  teamName: string;
   playerNames: Record<string, string>;
 }) {
   const labels = getTeamPlayerLabels(team);
@@ -168,7 +171,7 @@ function TeamTable({
             {team}
           </div>
           <div>
-            <div className="text-sm font-semibold text-white">Team {team}</div>
+            <div className="text-sm font-semibold text-white">{teamName}</div>
           </div>
         </div>
       </div>
@@ -467,7 +470,12 @@ export default function Home() {
           <SectionTitle title="Teams" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {TEAM_IDS.map((team) => (
-              <TeamTable key={team} team={team} playerNames={state.playerNames} />
+              <TeamTable
+                key={team}
+                team={team}
+                teamName={getTeamName(state.teamNames, team)}
+                playerNames={state.playerNames}
+              />
             ))}
           </div>
         </section>
