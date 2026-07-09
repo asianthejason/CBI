@@ -10,6 +10,7 @@ import {
   getRoundSchedule,
   getTeamName,
   getTeamPlayerLabels,
+  getCountdownTargetDate,
   type CaptainInfo,
   type MatchHoleScore,
   type Pair,
@@ -384,9 +385,9 @@ function Scorecard({
 }
 
 export default function Home() {
-  const draftDate = useMemo(() => new Date("2026-07-09T20:00:00"), []);
-  const cd = useCountdown(draftDate);
   const { state } = useLeagueState();
+  const draftDate = useMemo(() => getCountdownTargetDate(state.countdownTarget), [state.countdownTarget]);
+  const cd = useCountdown(draftDate);
   const [activeMatchupRound, setActiveMatchupRound] = useState<RoundLabel>("Round 1");
   const [activeRound, setActiveRound] = useState<RoundLabel>("Round 1");
 

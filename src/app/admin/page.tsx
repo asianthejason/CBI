@@ -21,6 +21,7 @@ import {
   getRoundSchedule,
   getTeamName,
   getTeamPlayerLabels,
+  sanitizeCountdownTarget,
   TEAM_IDS,
   type CaptainInfo,
   type LeagueState,
@@ -344,6 +345,15 @@ export default function AdminPage() {
 
   const activeSchedule = useMemo(() => getRoundSchedule(activeRound), [activeRound]);
 
+  const updateCountdownTarget = (value: string) => {
+    setDraftState((current) => ({
+      ...current,
+      countdownTarget: value,
+    }));
+    setIsDirty(true);
+    setSaveMessage("Unsaved changes. Click any Save All Changes button.");
+  };
+
   const updateCaptainInfoValues = (team: TeamId, values: Partial<CaptainInfo>) => {
     setDraftState((current) => ({
       ...current,
@@ -509,7 +519,10 @@ export default function AdminPage() {
     try {
       setIsSaving(true);
       setSaveMessage(`Saving all changes...`);
-      await saveState(draftState);
+      await saveState({
+        ...draftState,
+        countdownTarget: sanitizeCountdownTarget(draftState.countdownTarget),
+      });
       setIsDirty(false);
       setSaveMessage(`All changes saved to the live site`);
     } catch (error) {
@@ -645,6 +658,31 @@ export default function AdminPage() {
                 Firestore can&apos;t read or write this league document right now. Check your Firestore rules and make sure the signed-in email is allowed.
               </section>
             ) : null}
+
+            <section className="flex flex-col gap-4">
+              <SectionTitle title="Countdown Timer" />
+
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur">
+                <label className="block max-w-md">
+                  <div className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/55">
+                    Countdown Date and Time
+                  </div>
+                  <input
+                    type="datetime-local"
+                    value={draftState.countdownTarget}
+                    onChange={(event) => updateCountdownTarget(event.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-emerald-300/40"
+                  />
+                </label>
+              </div>
+
+              <SectionSaveButton
+                label="Save All Changes"
+                disabled={!isDirty || !configured || Boolean(liveError)}
+                isSaving={isSaving}
+                onClick={() => void handleSaveChanges()}
+              />
+            </section>
 
             <section className="flex flex-col gap-4">
               <SectionTitle title="Captains" />

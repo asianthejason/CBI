@@ -25,6 +25,7 @@ export type CaptainInfo = {
 };
 
 export type LeagueState = {
+  countdownTarget: string;
   captains: Record<TeamId, CaptainInfo>;
   teamNames: Record<TeamId, string>;
   playerNames: Record<string, string>;
@@ -46,6 +47,8 @@ export type ScoreTotals = {
 export const ROUND_LABELS: RoundLabel[] = ["Round 1", "Round 2", "Round 3"];
 export const TEAM_IDS: TeamId[] = ["A", "B", "C", "D"];
 export const TEAM_SLOT_LABELS = ["C", "1", "2", "3"] as const;
+export const DEFAULT_COUNTDOWN_TARGET = "2026-07-09T20:00";
+
 export const DEFAULT_TEAM_NAMES: Record<TeamId, string> = {
   A: "Team A",
   B: "Team B",
@@ -212,6 +215,7 @@ function cloneMatchScores(source: MatchScores): MatchScores {
 
 export function getDefaultLeagueState(): LeagueState {
   return {
+    countdownTarget: DEFAULT_COUNTDOWN_TARGET,
     captains: {
       A: { ...DEFAULT_CAPTAINS.A },
       B: { ...DEFAULT_CAPTAINS.B },
@@ -249,6 +253,30 @@ function sanitizeCaptainInfo(raw: unknown, fallback: CaptainInfo): CaptainInfo {
     imageUrl: typeof maybe.imageUrl === "string" ? maybe.imageUrl : fallback.imageUrl,
     imagePath: typeof maybe.imagePath === "string" ? maybe.imagePath : fallback.imagePath,
   };
+}
+
+export function sanitizeCountdownTarget(raw: unknown) {
+  if (typeof raw !== "string") {
+    return DEFAULT_COUNTDOWN_TARGET;
+  }
+
+  const trimmed = raw.trim();
+  const normalized = trimmed.length >= 16 ? trimmed.slice(0, 16) : trimmed;
+
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(normalized)) {
+    return DEFAULT_COUNTDOWN_TARGET;
+  }
+
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) {
+    return DEFAULT_COUNTDOWN_TARGET;
+  }
+
+  return normalized;
+}
+
+export function getCountdownTargetDate(value: string) {
+  return new Date(sanitizeCountdownTarget(value));
 }
 
 function sanitizeLeagueState(raw: unknown): LeagueState {
@@ -297,6 +325,7 @@ function sanitizeLeagueState(raw: unknown): LeagueState {
   }
 
   return {
+    countdownTarget: sanitizeCountdownTarget(maybe.countdownTarget),
     captains,
     teamNames,
     playerNames,
