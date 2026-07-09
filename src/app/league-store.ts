@@ -54,27 +54,27 @@ export const ROUND_SCHEDULES: RoundSchedule[] = [
     roundLabel: "Round 1",
     teamPairs: {
       A: [
-        ["A1", "A2"],
-        ["A3", "A4"],
+        ["A1", "A4"],
+        ["A2", "A3"],
       ],
       B: [
-        ["B1", "B2"],
-        ["B3", "B4"],
+        ["B1", "B4"],
+        ["B2", "B3"],
       ],
       C: [
-        ["C1", "C2"],
-        ["C3", "C4"],
+        ["C1", "C4"],
+        ["C2", "C3"],
       ],
       D: [
-        ["D1", "D2"],
-        ["D3", "D4"],
+        ["D1", "D4"],
+        ["D2", "D3"],
       ],
     },
     matches: [
-      { id: 1, left: ["A1", "A2"], right: ["B1", "B2"] },
-      { id: 2, left: ["A3", "A4"], right: ["B3", "B4"] },
-      { id: 3, left: ["C1", "C2"], right: ["D1", "D2"] },
-      { id: 4, left: ["C3", "C4"], right: ["D3", "D4"] },
+      { id: 1, left: ["A1", "A4"], right: ["D1", "D4"] },
+      { id: 2, left: ["A2", "A3"], right: ["D2", "D3"] },
+      { id: 3, left: ["B1", "B4"], right: ["C1", "C4"] },
+      { id: 4, left: ["B2", "B3"], right: ["C2", "C3"] },
     ],
   },
   {
@@ -108,27 +108,27 @@ export const ROUND_SCHEDULES: RoundSchedule[] = [
     roundLabel: "Round 3",
     teamPairs: {
       A: [
-        ["A1", "A4"],
-        ["A2", "A3"],
+        ["A1", "A2"],
+        ["A3", "A4"],
       ],
       B: [
-        ["B1", "B4"],
-        ["B2", "B3"],
+        ["B1", "B2"],
+        ["B3", "B4"],
       ],
       C: [
-        ["C1", "C4"],
-        ["C2", "C3"],
+        ["C1", "C2"],
+        ["C3", "C4"],
       ],
       D: [
-        ["D1", "D4"],
-        ["D2", "D3"],
+        ["D1", "D2"],
+        ["D3", "D4"],
       ],
     },
     matches: [
-      { id: 1, left: ["A1", "A4"], right: ["D1", "D4"] },
-      { id: 2, left: ["A2", "A3"], right: ["D2", "D3"] },
-      { id: 3, left: ["B1", "B4"], right: ["C1", "C4"] },
-      { id: 4, left: ["B2", "B3"], right: ["C2", "C3"] },
+      { id: 1, left: ["A1", "A2"], right: ["B1", "B2"] },
+      { id: 2, left: ["A3", "A4"], right: ["B3", "B4"] },
+      { id: 3, left: ["C1", "C2"], right: ["D1", "D2"] },
+      { id: 4, left: ["C3", "C4"], right: ["D3", "D4"] },
     ],
   },
 ];
