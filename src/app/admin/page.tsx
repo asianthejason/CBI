@@ -230,7 +230,7 @@ function getHolePoint(score: number | null | undefined, opponentScore: number | 
     return 0.5;
   }
 
-  return score > opponentScore ? 1 : 0;
+  return score < opponentScore ? 1 : 0;
 }
 
 function calculateHolePoints(scores: (number | null)[], opponentScores: (number | null)[]) {
