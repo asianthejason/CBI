@@ -246,18 +246,55 @@ function MatchupCard({
 const FRONT_NINE_SCORECARD = Array.from({ length: 9 }, (_, i) => i + 1);
 const BACK_NINE_SCORECARD = Array.from({ length: 9 }, (_, i) => i + 10);
 
+function getHolePoint(score: number | null | undefined, opponentScore: number | null | undefined) {
+  if (typeof score !== "number" || typeof opponentScore !== "number") {
+    return null;
+  }
+
+  if (score === opponentScore) {
+    return 0.5;
+  }
+
+  return score > opponentScore ? 1 : 0;
+}
+
+function calculateHolePoints(scores: (number | null)[], opponentScores: (number | null)[]) {
+  return scores.map((score, index) => getHolePoint(score, opponentScores[index]));
+}
+
+function calculatePointTotals(points: (number | null)[]) {
+  const totalRange = (start: number, end: number) => {
+    const values = points.slice(start, end).filter((point): point is number => typeof point === "number");
+    return values.length ? values.reduce((sum, point) => sum + point, 0) : null;
+  };
+
+  const out = totalRange(0, 9);
+  const inward = totalRange(9, 18);
+  const total = typeof out === "number" || typeof inward === "number" ? (out ?? 0) + (inward ?? 0) : null;
+
+  return { out, in: inward, total };
+}
+
+function formatPoint(point: number | null) {
+  return typeof point === "number" ? String(point) : "—";
+}
+
 function ScoreStrip({
   players,
   scores,
+  opponentScores,
   total,
   showTopBorder,
 }: {
   players: readonly [string, string];
   scores: (number | null)[];
+  opponentScores: (number | null)[];
   total: number | null;
   showTopBorder?: boolean;
 }) {
   const scoreTotals = calculateScoreTotals(scores);
+  const points = calculateHolePoints(scores, opponentScores);
+  const pointTotals = calculatePointTotals(points);
 
   return (
     <div
@@ -266,15 +303,15 @@ function ScoreStrip({
         (showTopBorder ? "border-t border-white/10" : "")
       }
     >
-      <div className="row-span-2 flex min-h-[96px] flex-col justify-center border-r border-white/10 px-1.5 py-3 text-[10px] font-semibold leading-5 text-white/85 sm:px-2 sm:text-[11px]">
+      <div className="row-span-4 flex min-h-[148px] flex-col justify-center border-r border-white/10 px-1.5 py-3 text-[10px] font-semibold leading-5 text-white/85 sm:px-2 sm:text-[11px]">
         <span className="truncate">{players[0]}</span>
         <span className="truncate text-white/65">{players[1]}</span>
       </div>
 
       {FRONT_NINE_SCORECARD.map((hole) => (
         <div
-          key={`front-label-${players[0]}-${hole}`}
-          className="flex h-[48px] min-w-0 flex-col items-center justify-center border-b border-white/10 bg-white/[0.05] px-0 text-center"
+          key={`front-score-${players[0]}-${hole}`}
+          className="flex h-[44px] min-w-0 flex-col items-center justify-center border-b border-white/10 bg-white/[0.05] px-0 text-center"
         >
           <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
             {hole}
@@ -285,7 +322,7 @@ function ScoreStrip({
         </div>
       ))}
 
-      <div className="flex h-[48px] min-w-0 flex-col items-center justify-center border-b border-l border-white/10 bg-white/[0.05] px-0 text-center">
+      <div className="flex h-[44px] min-w-0 flex-col items-center justify-center border-b border-l border-white/10 bg-white/[0.05] px-0 text-center">
         <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
           O
         </span>
@@ -294,19 +331,38 @@ function ScoreStrip({
         </span>
       </div>
 
-      <div className="row-span-2 flex min-h-[96px] flex-col items-center justify-center border-l border-white/10 px-1 text-center">
+      <div className="row-span-4 flex min-h-[148px] flex-col items-center justify-center border-l border-white/10 px-1 text-center">
         <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/60 sm:text-[11px]">
           Tot
         </span>
         <span className="mt-2 text-base font-semibold text-white/85 sm:text-lg">
           {typeof total === "number" ? total : "—"}
         </span>
+        <span className="mt-3 text-[9px] font-semibold uppercase tracking-[0.14em] text-emerald-200/70 sm:text-[10px]">
+          Pts
+        </span>
+        <span className="mt-1 text-sm font-semibold text-emerald-100 sm:text-base">
+          {formatPoint(pointTotals.total)}
+        </span>
+      </div>
+
+      {FRONT_NINE_SCORECARD.map((hole) => (
+        <div
+          key={`front-point-${players[0]}-${hole}`}
+          className="flex h-[30px] min-w-0 items-center justify-center border-b border-white/10 bg-emerald-300/[0.05] px-0 text-center text-[11px] font-semibold text-emerald-100 sm:text-xs"
+        >
+          {formatPoint(points[hole - 1])}
+        </div>
+      ))}
+
+      <div className="flex h-[30px] min-w-0 items-center justify-center border-b border-l border-white/10 bg-emerald-300/[0.05] px-0 text-center text-[11px] font-semibold text-emerald-100 sm:text-xs">
+        {formatPoint(pointTotals.out)}
       </div>
 
       {BACK_NINE_SCORECARD.map((hole) => (
         <div
-          key={`back-label-${players[0]}-${hole}`}
-          className="flex h-[48px] min-w-0 flex-col items-center justify-center px-0 text-center"
+          key={`back-score-${players[0]}-${hole}`}
+          className="flex h-[44px] min-w-0 flex-col items-center justify-center border-b border-white/10 px-0 text-center"
         >
           <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
             {hole}
@@ -317,13 +373,26 @@ function ScoreStrip({
         </div>
       ))}
 
-      <div className="flex h-[48px] min-w-0 flex-col items-center justify-center border-l border-white/10 px-0 text-center">
+      <div className="flex h-[44px] min-w-0 flex-col items-center justify-center border-b border-l border-white/10 px-0 text-center">
         <span className="text-[10px] font-semibold uppercase tracking-tight text-white/70 sm:text-[11px]">
           I
         </span>
         <span className="mt-1 text-sm font-semibold leading-none text-white/85">
           {scoreTotals.in ?? "—"}
         </span>
+      </div>
+
+      {BACK_NINE_SCORECARD.map((hole) => (
+        <div
+          key={`back-point-${players[0]}-${hole}`}
+          className="flex h-[30px] min-w-0 items-center justify-center bg-emerald-300/[0.035] px-0 text-center text-[11px] font-semibold text-emerald-100 sm:text-xs"
+        >
+          {formatPoint(points[hole - 1])}
+        </div>
+      ))}
+
+      <div className="flex h-[30px] min-w-0 items-center justify-center border-l border-white/10 bg-emerald-300/[0.035] px-0 text-center text-[11px] font-semibold text-emerald-100 sm:text-xs">
+        {formatPoint(pointTotals.in)}
       </div>
     </div>
   );
@@ -376,8 +445,8 @@ function Scorecard({
         </div>
 
         <div className="mt-4 rounded-xl border border-white/10 bg-black/20">
-          <ScoreStrip players={rowTeams[0]} scores={score.left} total={totals[0]} />
-          <ScoreStrip players={rowTeams[1]} scores={score.right} total={totals[1]} showTopBorder />
+          <ScoreStrip players={rowTeams[0]} scores={score.left} opponentScores={score.right} total={totals[0]} />
+          <ScoreStrip players={rowTeams[1]} scores={score.right} opponentScores={score.left} total={totals[1]} showTopBorder />
         </div>
       </div>
     </div>

@@ -221,6 +221,51 @@ function ScoreValue({ value }: { value: number | null }) {
   return <span>{value ?? "—"}</span>;
 }
 
+function getHolePoint(score: number | null | undefined, opponentScore: number | null | undefined) {
+  if (typeof score !== "number" || typeof opponentScore !== "number") {
+    return null;
+  }
+
+  if (score === opponentScore) {
+    return 0.5;
+  }
+
+  return score > opponentScore ? 1 : 0;
+}
+
+function calculateHolePoints(scores: (number | null)[], opponentScores: (number | null)[]) {
+  return scores.map((score, index) => getHolePoint(score, opponentScores[index]));
+}
+
+function calculatePointTotals(points: (number | null)[]) {
+  const totalRange = (start: number, end: number) => {
+    const values = points.slice(start, end).filter((point): point is number => typeof point === "number");
+    return values.length ? values.reduce((sum, point) => sum + point, 0) : null;
+  };
+
+  const out = totalRange(0, 9);
+  const inward = totalRange(9, 18);
+  const total = typeof out === "number" || typeof inward === "number" ? (out ?? 0) + (inward ?? 0) : null;
+
+  return { out, in: inward, total };
+}
+
+function formatPoint(point: number | null) {
+  return typeof point === "number" ? String(point) : "—";
+}
+
+function PointValue({ value }: { value: number | null }) {
+  return <span>{formatPoint(value)}</span>;
+}
+
+function PointCell({ value }: { value: number | null }) {
+  return (
+    <div className="flex h-7 min-w-0 items-center justify-center px-0.5 text-center text-[11px] font-semibold text-emerald-100 sm:px-1 sm:text-xs">
+      <PointValue value={value} />
+    </div>
+  );
+}
+
 function HoleInput({
   hole,
   value,
@@ -250,14 +295,18 @@ function ScoreboardRow({
   title,
   subtitle,
   scores,
+  opponentScores,
   onHoleChange,
 }: {
   title: string;
   subtitle: string;
   scores: (number | null)[];
+  opponentScores: (number | null)[];
   onHoleChange: (holeIndex: number, value: string) => void;
 }) {
   const totals = calculateScoreTotals(scores);
+  const points = calculateHolePoints(scores, opponentScores);
+  const pointTotals = calculatePointTotals(points);
 
   return (
     <div className="grid w-full grid-cols-[86px_minmax(0,1fr)_44px] border-t border-white/10 first:border-t-0 sm:grid-cols-[96px_minmax(0,1fr)_48px] md:grid-cols-[104px_minmax(0,1fr)_52px]">
@@ -266,7 +315,7 @@ function ScoreboardRow({
         <div className="mt-1 truncate text-[11px] text-white/72 sm:text-[12px]">{subtitle}</div>
       </div>
 
-      <div className="grid min-w-0 grid-rows-2">
+      <div className="grid min-w-0 grid-rows-[auto_28px_auto_28px]">
         <div className="grid grid-cols-10 border-b border-white/10 bg-white/[0.03]">
           {FRONT_NINE.map((hole) => (
             <HoleInput
@@ -284,7 +333,16 @@ function ScoreboardRow({
           </div>
         </div>
 
-        <div className="grid grid-cols-10 bg-white/[0.02]">
+        <div className="grid grid-cols-10 border-b border-white/10 bg-emerald-300/[0.05]">
+          {FRONT_NINE.map((hole) => (
+            <PointCell key={`${title}-front-point-${hole}`} value={points[hole - 1]} />
+          ))}
+          <div className="flex h-7 items-center justify-center border-l border-white/10 text-[11px] font-semibold text-emerald-100 sm:text-xs">
+            <PointValue value={pointTotals.out} />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-10 border-b border-white/10 bg-white/[0.02]">
           {BACK_NINE.map((hole) => (
             <HoleInput
               key={`${title}-back-${hole}`}
@@ -300,12 +358,27 @@ function ScoreboardRow({
             </div>
           </div>
         </div>
+
+        <div className="grid grid-cols-10 bg-emerald-300/[0.035]">
+          {BACK_NINE.map((hole) => (
+            <PointCell key={`${title}-back-point-${hole}`} value={points[hole - 1]} />
+          ))}
+          <div className="flex h-7 items-center justify-center border-l border-white/10 text-[11px] font-semibold text-emerald-100 sm:text-xs">
+            <PointValue value={pointTotals.in} />
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-col items-center justify-center border-l border-white/10 bg-black/22 px-1 py-3 text-center sm:px-2 sm:py-4">
         <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55">TOT</div>
         <div className="mt-2 text-lg font-semibold text-white sm:text-xl">
           <ScoreValue value={totals.total} />
+        </div>
+        <div className="mt-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-200/70">
+          PTS
+        </div>
+        <div className="mt-1 text-sm font-semibold text-emerald-100 sm:text-base">
+          <PointValue value={pointTotals.total} />
         </div>
       </div>
     </div>
@@ -871,6 +944,7 @@ export default function AdminPage() {
                         title={getPlayerName(draftState.playerNames, match.left[0])}
                         subtitle={getPlayerName(draftState.playerNames, match.left[1])}
                         scores={draftState.matchScores[activeSchedule.roundLabel][match.id].left}
+                        opponentScores={draftState.matchScores[activeSchedule.roundLabel][match.id].right}
                         onHoleChange={(holeIndex, value) =>
                           updateHoleScore(activeSchedule.roundLabel, match.id, "left", holeIndex, value)
                         }
@@ -879,6 +953,7 @@ export default function AdminPage() {
                         title={getPlayerName(draftState.playerNames, match.right[0])}
                         subtitle={getPlayerName(draftState.playerNames, match.right[1])}
                         scores={draftState.matchScores[activeSchedule.roundLabel][match.id].right}
+                        opponentScores={draftState.matchScores[activeSchedule.roundLabel][match.id].left}
                         onHoleChange={(holeIndex, value) =>
                           updateHoleScore(activeSchedule.roundLabel, match.id, "right", holeIndex, value)
                         }
